@@ -69,7 +69,6 @@ public class EmojiSwitcherUtils {
                 shell = RootTools.getShell(true);
                 CommandCapture commandPermission = new CommandCapture(0, "chmod 644 " + "/system/fonts/" + systemEmojiSetFileName);
                 shell.add(commandPermission);
-                shell.close();
             } catch (TimeoutException e) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
