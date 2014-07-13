@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Emoji Switcher</string>
+    <string name="action_settings">Settings</string>
+    <string name="current_emojis_detected">Current emojis detected:</string>
+    <string name="unknown">Unknown</string>
+    <string name="set">Set</string>
+    <string name="refresh">Refresh</string>
+    <string name="try_again">Try again</string>
+    <string name="check_root">Check root</string>
+    <string name="root_problem">There was a problem getting root access, which is needed to modify the built-in emoji data.\n\nDoes this app have root permissions?</string>
+    <string name="are_you_rooted">Are you rooted?</string>
+    <string name="failed_to_get_root">Failed to get root!</string>
+    <string name="switch_emojis_to">Switch emojis to…</string>
+    <string name="set_emojis_to_">Set emojis to</string>
+    <string name="about">Fonts provided by gonsa from XDA. App by Steven Schoen.</string>
+    <string name="reboot">Reboot</string>
+
+</resources>

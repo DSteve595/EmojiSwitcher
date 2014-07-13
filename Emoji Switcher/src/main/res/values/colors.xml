@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="emojiswitcher_orange">#FFA42C</color>
+    <color name="emojiswitcher_orange_transparent">#E0FFA42C</color>
+    <color name="emojiswitcher_orange_faded1">#ffd685</color>
+    <color name="emojiswitcher_orange_faded2">#ffe8ba</color>
+
+    <color name="current_emojis_good">#20D020</color>
+    <color name="current_emojis_bad">#D02020</color>
+
+    <color name="button_normal">#B0f2e2c2</color>
+    <color name="button_disabled">#60f2e2c2</color>
+    <color name="button_pressed">@color/emojiswitcher_orange_transparent</color>
+    <color name="button_focused">#B0ccbaa3</color>
+    <color name="button_disabled_focused">#60ccbaa3</color>
+
+    <color name="divider">#C0C0C0</color>
+
+</resources>

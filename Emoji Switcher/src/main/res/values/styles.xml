@@ -1,0 +1,31 @@
+<resources>
+
+    <style name="EmojiSwitcher" parent="android:Theme.Holo.Light">
+        <item name="autoScaleTextViewStyle">@style/EmojiSwitcher.AutoScaleTextView</item>
+        <item name="android:windowActionBarOverlay">true</item>
+        <item name="android:actionBarStyle">@style/EmojiSwitcher.ActionBar</item>
+        <item name="android:buttonStyle">@style/EmojiSwitcher.Button</item>
+        <item name="android:listSelector">@drawable/button</item>
+        <item name="android:divider">@drawable/divider</item>
+        <item name="android:dividerPadding">8dp</item>
+    </style>
+
+    <style name="EmojiSwitcher.ActionBar" parent="android:Widget.Holo.Light.ActionBar">
+        <item name="android:background">@color/emojiswitcher_orange_transparent</item>
+    </style>
+
+    <style name="EmojiSwitcher.AutoScaleTextView">
+        <item name="minTextSize">12sp</item>
+    </style>
+
+    <style name="EmojiSwitcher.Button" parent="android:Widget.Holo.Light.Button">
+        <item name="android:background">@drawable/button</item>
+        <item name="android:paddingLeft">8dp</item>
+        <item name="android:paddingRight">8dp</item>
+    </style>
+
+    <style name="EmojiSwitcher.Button.Round" parent="android:Widget.Holo.Light.Button">
+        <item name="android:background">@drawable/button_round</item>
+    </style>
+
+</resources>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<pre-dex-items>
+
+    <item
+        dex="C:\Users\Steven\Documents\Projects\EmojiSwitcher\Emoji Switcher\build\intermediates\pre-dexed\release\classes-a848d96650d1953bcd96189d82861808a982d040.jar"
+        jar="C:\Users\Steven\Documents\Projects\EmojiSwitcher\build\intermediates\exploded-aar\com.google.android.gms\play-services\5.0.77\classes.jar"
+        jumboMode="false"
+        revision="20.0.0"
+        sha1="b6a82434c1eca686607867cd906bcc80ed987837"/>
+    <item
+        dex="C:\Users\Steven\Documents\Projects\EmojiSwitcher\Emoji Switcher\build\intermediates\pre-dexed\release\support-v4-19.1.0-a22c0f82dd3cd2e296e0f724b466cb05c2a80ae8.jar"
+        jar="C:\android-sdk\extras\android\m2repository\com\android\support\support-v4\19.1.0\support-v4-19.1.0.jar"
+        jumboMode="false"
+        revision="20.0.0"
+        sha1="85f201b380937e61a9dce6ca90ccf6872abbfb67"/>
+    <item
+        dex="C:\Users\Steven\Documents\Projects\EmojiSwitcher\Emoji Switcher\build\intermediates\pre-dexed\release\RootTools-3.5-735242a9856c57d2a14e4801bbb326b846453c69.jar"
+        jar="C:\Users\Steven\Documents\Projects\EmojiSwitcher\Emoji Switcher\libs\RootTools-3.5.jar"
+        jumboMode="false"
+        revision="20.0.0"
+        sha1="16b2d49a7359c9ddbfcb1bc66f9c342c502e821b"/>
+    <item
+        dex="C:\Users\Steven\Documents\Projects\EmojiSwitcher\Emoji Switcher\build\intermediates\pre-dexed\debug\classes-4505a6e369349044bd2cc72ac3febd43cb2c3a2e.jar"
+        jar="C:\Users\Steven\Documents\Projects\EmojiSwitcher\build\intermediates\exploded-aar\EmojiSwitcher.libraries.RootTools.RootTools\RootTools\unspecified\classes.jar"
+        jumboMode="false"
+        revision="20.0.0"
+        sha1="98c10aa4a3228691139a4bf28c9cc758a8c0001e"/>
+    <item
+        dex="C:\Users\Steven\Documents\Projects\EmojiSwitcher\Emoji Switcher\build\intermediates\pre-dexed\release\commons-io-2.4-ae7303d0dd5467b91bcb4448d7cc027f56e40ae1.jar"
+        jar="C:\Users\Steven\.gradle\caches\modules-2\files-2.1\commons-io\commons-io\2.4\b1b6ea3b7e4aa4f492509a4952029cd8e48019ad\commons-io-2.4.jar"
+        jumboMode="false"
+        revision="20.0.0"
+        sha1="b1b6ea3b7e4aa4f492509a4952029cd8e48019ad"/>
+    <item
+        dex="C:\Users\Steven\Documents\Projects\EmojiSwitcher\Emoji Switcher\build\intermediates\pre-dexed\release\guava-17.0-2ef9de6bc26733faf5336ee18902d80a99b76c25.jar"
+        jar="C:\Users\Steven\.gradle\caches\modules-2\files-2.1\com.google.guava\guava\17.0\9c6ef172e8de35fd8d4d8783e4821e57cdef7445\guava-17.0.jar"
+        jumboMode="false"
+        revision="20.0.0"
+        sha1="9c6ef172e8de35fd8d4d8783e4821e57cdef7445"/>
+
+</pre-dex-items>
