@@ -18,7 +18,7 @@ android {
 }
 
 dependencies {
-    compile 'com.google.android.gms:play-services:5.0.+'
+    compile 'com.google.android.gms:play-services:5.2.+'
     compile 'commons-io:commons-io:2.4'
     compile 'com.google.guava:guava:17.+'
     compile files('libs/RootTools-3.5.jar')
