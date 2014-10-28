@@ -51,6 +51,8 @@ public class EmojiSet {
 
     private static Map<String, String> filenamesToFriendlyNames = new HashMap<>();
     static {
+        filenamesToFriendlyNames.put("GoogleLollipop", "Google (Lollipop)");
+        filenamesToFriendlyNames.put("GoogleKitkat", "Google (KitKat)");
         filenamesToFriendlyNames.put("HTCM8", "HTC M8");
         filenamesToFriendlyNames.put("LGG3", "LG G3");
         filenamesToFriendlyNames.put("SamsungS4", "Samsung S4");

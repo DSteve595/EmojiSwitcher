@@ -60,6 +60,12 @@ public class SwitcherActivity extends Activity {
 
         verifyRoot();
 
+        if (EmojiSwitcherUtils.isRootReady()) {
+            init();
+        }
+    }
+
+    private void init() {
         textCurrentEmojiSet = (TextView) findViewById(R.id.text_currentemojisetdetected_is);
 
         buttonRefreshEmojiState = (ImageButton) findViewById(R.id.button_refreshemojistate);
@@ -75,13 +81,13 @@ public class SwitcherActivity extends Activity {
         emojiSetsAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerInstallEmojis.setAdapter(emojiSetsAdapter);
 
-		final Button buttonReboot = (Button) findViewById(R.id.button_reboot);
-		buttonReboot.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				RootTools.restartAndroid();
-			}
-		});
+        final Button buttonReboot = (Button) findViewById(R.id.button_reboot);
+        buttonReboot.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                RootTools.restartAndroid();
+            }
+        });
 
         Button buttonInstallEmojiSet = (Button) findViewById(R.id.button_installemojiset);
         buttonInstallEmojiSet.setOnClickListener(new View.OnClickListener() {
@@ -89,22 +95,22 @@ public class SwitcherActivity extends Activity {
             public void onClick(View v) {
                 emojiSwitcherUtils.installEmojiSet(SwitcherActivity.this, (EmojiSet) spinnerInstallEmojis.getSelectedItem());
                 fetchCurrentSystemEmojiSet();
-				AlertDialog.Builder builder = new AlertDialog.Builder(SwitcherActivity.this);
-				builder.setTitle("Reboot now?");
-				builder.setMessage("Most apps require a reboot for new emojis to be recognized.");
-				builder.setPositiveButton("Reboot", new DialogInterface.OnClickListener() {
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						RootTools.restartAndroid();
-					}
-				});
-				builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						dialog.cancel();
-					}
-				});
-				builder.show();
+                AlertDialog.Builder builder = new AlertDialog.Builder(SwitcherActivity.this);
+                builder.setTitle("Reboot now?");
+                builder.setMessage("Most apps require a reboot for new emojis to be recognized.");
+                builder.setPositiveButton("Reboot", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        RootTools.restartAndroid();
+                    }
+                });
+                builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+                builder.show();
             }
         });
 
@@ -112,7 +118,7 @@ public class SwitcherActivity extends Activity {
 
         fetchCurrentSystemEmojiSet();
 
-		setupBilling();
+        setupBilling();
     }
 
     private void fetchCurrentSystemEmojiSet() {
