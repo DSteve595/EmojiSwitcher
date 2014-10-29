@@ -16,5 +16,6 @@
     <string name="set_emojis_to_">Set emojis to</string>
     <string name="about">Fonts provided by gonsa from XDA. App by Steven Schoen.</string>
     <string name="reboot">Reboot</string>
+    <string name="restore_default">Restore default</string>
 
 </resources>

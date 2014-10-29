@@ -1,9 +1,7 @@
 package com.stevenschoen.emojiswitcher;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -72,7 +70,7 @@ public class SwitcherActivity extends Activity {
         buttonRefreshEmojiState.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                fetchCurrentSystemEmojiSet();
+                refreshCurrentSystemEmojiSet();
             }
         });
 
@@ -94,34 +92,19 @@ public class SwitcherActivity extends Activity {
             @Override
             public void onClick(View v) {
                 emojiSwitcherUtils.installEmojiSet(SwitcherActivity.this, (EmojiSet) spinnerInstallEmojis.getSelectedItem());
-                fetchCurrentSystemEmojiSet();
-                AlertDialog.Builder builder = new AlertDialog.Builder(SwitcherActivity.this);
-                builder.setTitle("Reboot now?");
-                builder.setMessage("Most apps require a reboot for new emojis to be recognized.");
-                builder.setPositiveButton("Reboot", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        RootTools.restartAndroid();
-                    }
-                });
-                builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-                builder.show();
+                refreshCurrentSystemEmojiSet();
+                emojiSwitcherUtils.makeRebootDialog(SwitcherActivity.this).show();
             }
         });
 
         copyEmojiSetsToData();
 
-        fetchCurrentSystemEmojiSet();
+        refreshCurrentSystemEmojiSet();
 
         setupBilling();
     }
 
-    private void fetchCurrentSystemEmojiSet() {
+    private void refreshCurrentSystemEmojiSet() {
         verifyRoot();
 
         new EmojiSwitcherUtils.GetCurrentEmojiSetTask() {
@@ -315,9 +298,19 @@ public class SwitcherActivity extends Activity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
+        switch (id) {
+            case R.id.action_restore:
+                new EmojiSwitcherUtils.RestoreSystemEmojiTask() {
+                    @Override
+                    protected void onPostExecute(Void nothing) {
+                        super.onPostExecute(nothing);
+
+                        refreshCurrentSystemEmojiSet();
+                    }
+                }.execute(this);
+                return true;
         }
+
         return super.onOptionsItemSelected(item);
     }
 

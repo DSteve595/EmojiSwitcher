@@ -1,9 +1,13 @@
 package com.stevenschoen.emojiswitcher;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.res.AssetManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.widget.Toast;
 
 import com.stericson.RootTools.RootTools;
@@ -16,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.concurrent.TimeoutException;
 
 public class EmojiSwitcherUtils {
@@ -30,13 +35,38 @@ public class EmojiSwitcherUtils {
 
     private InstallEmojiSetTask currentInstallTask;
 
-    private static String systemEmojiSetFileName = "NotoColorEmoji.ttf";
+    private static final String systemFontsPath = "/system/fonts/";
+    private static final String systemEmojiFilePath = systemFontsPath + "NotoColorEmoji.ttf";
+    private static final String htcFilePath =  systemFontsPath + "NotoColorEmoji-htc.ttf";
+    private static final String htcBackupFilePath = htcFilePath + ".bak";
+
+    public static String systemEmojiBackupFilePath(Context context) {
+        return context.getFilesDir() + File.separator + "backup.ttf";
+    }
 
 	public static boolean isRootReady() {
 		return (RootTools.isRootAvailable() && RootTools.isAccessGiven());
 	}
 
+    public static boolean isHtc() {
+        return Build.MANUFACTURER.toLowerCase(Locale.ENGLISH).equals("htc");
+    }
+
+    public static void applyHtcFix() {
+        RootTools.copyFile(htcFilePath, htcBackupFilePath, true, true);
+        RootTools.deleteFileOrDirectory(htcFilePath, false);
+    }
+
+    public static void undoHtcFix() {
+        RootTools.copyFile(htcBackupFilePath, htcFilePath, true, true);
+        RootTools.deleteFileOrDirectory(htcBackupFilePath, false);
+    }
+
 	public void installEmojiSet(Context context, EmojiSet emojiSet) {
+        if (isHtc()) {
+            applyHtcFix();
+        }
+
         if (currentInstallTask != null) {
             currentInstallTask.cancel(true);
             currentInstallTask = null;
@@ -47,15 +77,67 @@ public class EmojiSwitcherUtils {
         }
     }
 
+    public static void applyPermissions(final Activity activity, String permissions, String path) {
+        Shell shell;
+        try {
+            shell = RootTools.getShell(true);
+            CommandCapture commandPermission = new CommandCapture(0, "chmod " + permissions + " " + path);
+            shell.add(commandPermission);
+        } catch (TimeoutException e) {
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(activity, "Error: Timeout", Toast.LENGTH_LONG).show();
+                }
+            });
+            e.printStackTrace();
+        } catch (RootDeniedException e) {
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(activity, "Error: Root denied", Toast.LENGTH_LONG).show();
+                }
+            });
+            e.printStackTrace();
+        } catch (IOException e) {
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(activity, "Error: IOException", Toast.LENGTH_LONG).show();
+                }
+            });
+            e.printStackTrace();
+        }
+    }
+
+    public static Dialog makeRebootDialog(Context context) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("Reboot now?");
+        builder.setMessage("Most apps require a reboot for new emojis to be recognized.");
+        builder.setPositiveButton("Reboot", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                RootTools.restartAndroid();
+            }
+        });
+        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        return builder.create();
+    }
+
     private static class InstallEmojiSetTask extends AsyncTask<Object, Void, Void> {
         @Override
         protected Void doInBackground(Object... params) {
             final Activity activity = (Activity) params[0];
             EmojiSet emojiSet = (EmojiSet) params[1];
 
-            File filesDir = activity.getFilesDir();
-            File systemEmojiSetFile = new File("/system/fonts/" + systemEmojiSetFileName);
-            File backupFile = new File(filesDir + File.separator + "backup.ttf");
+            File systemEmojiSetFile = new File(systemEmojiFilePath);
+            File backupFile = new File(systemEmojiBackupFilePath(activity));
             if (backupFile.length() == 0) {
                 RootTools.copyFile(systemEmojiSetFile.getAbsolutePath(),
                         backupFile.getAbsolutePath(), true, false);
@@ -64,36 +146,7 @@ public class EmojiSwitcherUtils {
             File emojiSetFile = emojiSet.getPath();
             RootTools.copyFile(emojiSetFile.getAbsolutePath(),
                     systemEmojiSetFile.getAbsolutePath(), true, false);
-            Shell shell;
-            try {
-                shell = RootTools.getShell(true);
-                CommandCapture commandPermission = new CommandCapture(0, "chmod 644 " + "/system/fonts/" + systemEmojiSetFileName);
-                shell.add(commandPermission);
-            } catch (TimeoutException e) {
-                activity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(activity, "Error: Timeout", Toast.LENGTH_LONG).show();
-                    }
-                });
-                e.printStackTrace();
-            } catch (RootDeniedException e) {
-                activity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(activity, "Error: Root denied", Toast.LENGTH_LONG).show();
-                    }
-                });
-                e.printStackTrace();
-            } catch (IOException e) {
-                activity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(activity, "Error: IOException", Toast.LENGTH_LONG).show();
-                    }
-                });
-                e.printStackTrace();
-            }
+            applyPermissions(activity, "644", systemEmojiFilePath);
 
             return null;
         }
@@ -150,7 +203,8 @@ public class EmojiSwitcherUtils {
             Context context = params[0];
 
             File emojiSetDestinationFile = new File(context.getFilesDir() + File.separator + "systemcurrent.ttf");
-            RootTools.copyFile("/system/fonts/" + systemEmojiSetFileName, emojiSetDestinationFile.getAbsolutePath(), true, true);
+            RootTools.copyFile(systemEmojiFilePath, emojiSetDestinationFile.getAbsolutePath(), true, false);
+            applyPermissions((Activity) context, "777", emojiSetDestinationFile.getAbsolutePath());
             EmojiSet emojiSet = new EmojiSet(emojiSetDestinationFile);
 
             try {
@@ -178,6 +232,29 @@ public class EmojiSwitcherUtils {
             }
 
             return null;
+        }
+    }
+
+    public static class RestoreSystemEmojiTask extends AsyncTask<Activity, Void, Void> {
+        private Activity activity;
+
+        @Override
+        protected Void doInBackground(Activity... activity) {
+            this.activity = activity[0];
+
+            if (isHtc()) {
+                undoHtcFix();
+            }
+
+            RootTools.copyFile(systemEmojiBackupFilePath(activity[0]), systemEmojiFilePath, true, true);
+            applyPermissions(activity[0], "644", systemEmojiFilePath);
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void nothing) {
+            makeRebootDialog(activity).show();
         }
     }
 }
