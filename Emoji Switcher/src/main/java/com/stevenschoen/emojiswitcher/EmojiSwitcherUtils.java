@@ -78,11 +78,12 @@ public class EmojiSwitcherUtils {
     }
 
     public static void applyPermissions(final Activity activity, String permissions, String path) {
-        Shell shell;
         try {
-            shell = RootTools.getShell(true);
+            RootTools.remount(path, "RW");
+            Shell shell = RootTools.getShell(true);
             CommandCapture commandPermission = new CommandCapture(0, "chmod " + permissions + " " + path);
             shell.add(commandPermission);
+            shell.close();
         } catch (TimeoutException e) {
             activity.runOnUiThread(new Runnable() {
                 @Override
