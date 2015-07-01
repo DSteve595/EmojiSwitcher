@@ -1,30 +1,27 @@
 <resources>
 
-    <style name="EmojiSwitcher" parent="android:Theme.Holo.Light">
+    <style name="EmojiSwitcher" parent="Theme.AppCompat.Light">
+        <item name="colorPrimary">@color/emojiswitcher_orange</item>
+        <item name="colorPrimaryDark">@color/emojiswitcher_orange_dark</item>
+        <item name="colorAccent">@color/emojiswitcher_orange_faded1</item>
+        <item name="colorButtonNormal">@color/emojiswitcher_orange_faded2</item>
+        
         <item name="autoScaleTextViewStyle">@style/EmojiSwitcher.AutoScaleTextView</item>
-        <item name="android:windowActionBarOverlay">true</item>
-        <item name="android:actionBarStyle">@style/EmojiSwitcher.ActionBar</item>
-        <item name="android:buttonStyle">@style/EmojiSwitcher.Button</item>
-        <item name="android:listSelector">@drawable/button</item>
+        <item name="windowActionBarOverlay">true</item>
+        <item name="actionBarStyle">@style/EmojiSwitcher.ActionBar</item>
         <item name="android:divider">@drawable/divider</item>
         <item name="android:dividerPadding">8dp</item>
     </style>
 
-    <style name="EmojiSwitcher.ActionBar" parent="android:Widget.Holo.Light.ActionBar">
-        <item name="android:background">@color/emojiswitcher_orange_transparent</item>
+    <style name="EmojiSwitcher.ActionBar" parent="Widget.AppCompat.Light.ActionBar.Solid">
+        <item name="background">@color/emojiswitcher_orange_transparent</item>
     </style>
 
     <style name="EmojiSwitcher.AutoScaleTextView">
         <item name="minTextSize">12sp</item>
     </style>
 
-    <style name="EmojiSwitcher.Button" parent="android:Widget.Holo.Light.Button">
-        <item name="android:background">@drawable/button</item>
-        <item name="android:paddingLeft">8dp</item>
-        <item name="android:paddingRight">8dp</item>
-    </style>
-
-    <style name="EmojiSwitcher.Button.Round" parent="android:Widget.Holo.Light.Button">
+    <style name="EmojiSwitcher.ButtonRound" parent="android:Widget.ImageButton">
         <item name="android:background">@drawable/button_round</item>
     </style>
 

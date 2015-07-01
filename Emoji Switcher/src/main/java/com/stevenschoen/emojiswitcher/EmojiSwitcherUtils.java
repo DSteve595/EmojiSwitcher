@@ -10,10 +10,10 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.widget.Toast;
 
+import com.stericson.RootShell.exceptions.RootDeniedException;
+import com.stericson.RootShell.execution.Command;
+import com.stericson.RootShell.execution.Shell;
 import com.stericson.RootTools.RootTools;
-import com.stericson.RootTools.exceptions.RootDeniedException;
-import com.stericson.RootTools.execution.CommandCapture;
-import com.stericson.RootTools.execution.Shell;
 
 import org.apache.commons.io.FileUtils;
 
@@ -81,7 +81,7 @@ public class EmojiSwitcherUtils {
         try {
             RootTools.remount(path, "RW");
             Shell shell = RootTools.getShell(true);
-            CommandCapture commandPermission = new CommandCapture(0, "chmod " + permissions + " " + path);
+            Command commandPermission = new Command(0, "chmod " + permissions + " " + path);
             shell.add(commandPermission);
             shell.close();
         } catch (TimeoutException e) {

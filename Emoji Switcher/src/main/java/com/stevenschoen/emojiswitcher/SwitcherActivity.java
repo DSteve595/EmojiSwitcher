@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -33,7 +34,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SwitcherActivity extends Activity {
+public class SwitcherActivity extends AppCompatActivity {
 
     private TextView textCurrentEmojiSet;
     private ImageButton buttonRefreshEmojiState;
@@ -79,7 +80,7 @@ public class SwitcherActivity extends Activity {
         emojiSetsAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerInstallEmojis.setAdapter(emojiSetsAdapter);
 
-        final Button buttonReboot = (Button) findViewById(R.id.button_reboot);
+        Button buttonReboot = (Button) findViewById(R.id.button_reboot);
         buttonReboot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -93,7 +94,7 @@ public class SwitcherActivity extends Activity {
             public void onClick(View v) {
                 emojiSwitcherUtils.installEmojiSet(SwitcherActivity.this, (EmojiSet) spinnerInstallEmojis.getSelectedItem());
                 refreshCurrentSystemEmojiSet();
-                emojiSwitcherUtils.makeRebootDialog(SwitcherActivity.this).show();
+                EmojiSwitcherUtils.makeRebootDialog(SwitcherActivity.this).show();
             }
         });
 
@@ -233,7 +234,7 @@ public class SwitcherActivity extends Activity {
 	}
 
 	private void checkAds() {
-		List additionalSkuList = new ArrayList();
+		List<String> additionalSkuList = new ArrayList<>();
 		additionalSkuList.add(EmojiSwitcherUtils.SKU_REMOVEADS);
 		billingHelper.queryInventoryAsync(true, additionalSkuList,
 				new IabHelper.QueryInventoryFinishedListener() {
