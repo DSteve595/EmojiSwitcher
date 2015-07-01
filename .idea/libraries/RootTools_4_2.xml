@@ -1,7 +1,7 @@
 <component name="libraryTable">
-  <library name="RootTools-3.5">
+  <library name="RootTools-4.2">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/Emoji Switcher/libs/RootTools-3.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/Emoji Switcher/libs/RootTools-4.2.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
