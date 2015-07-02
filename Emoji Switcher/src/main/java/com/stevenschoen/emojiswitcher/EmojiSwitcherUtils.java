@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.res.AssetManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.widget.Toast;
@@ -14,14 +13,19 @@ import com.stericson.RootShell.exceptions.RootDeniedException;
 import com.stericson.RootShell.execution.Command;
 import com.stericson.RootShell.execution.Shell;
 import com.stericson.RootTools.RootTools;
-
-import org.apache.commons.io.FileUtils;
+import com.stevenschoen.emojiswitcher.network.EmojiSetListing;
+import com.stevenschoen.emojiswitcher.network.NetworkInterface;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeoutException;
+
+import retrofit.RestAdapter;
+import rx.Observable;
+import rx.Subscriber;
+import rx.schedulers.Schedulers;
 
 public class EmojiSwitcherUtils {
 	public static final String GOOGLE_ADS_UNITID = "ca-app-pub-9259165898539273/5321636233";
@@ -39,6 +43,18 @@ public class EmojiSwitcherUtils {
     private static final String systemEmojiFilePath = systemFontsPath + "NotoColorEmoji.ttf";
     private static final String htcFilePath = systemFontsPath + "AndroidEmoji-htc.ttf";
     private static final String htcBackupFilePath = htcFilePath + ".bak";
+
+    private NetworkInterface networkInterface;
+
+    public EmojiSwitcherUtils() {
+        networkInterface = new RestAdapter.Builder()
+                .setEndpoint(NetworkInterface.URL)
+                .build().create(NetworkInterface.class);
+    }
+
+    public NetworkInterface getNetworkInterface() {
+        return networkInterface;
+    }
 
     public static String systemEmojiBackupFilePath(Context context) {
         return context.getFilesDir() + File.separator + "backup.ttf";
@@ -144,7 +160,7 @@ public class EmojiSwitcherUtils {
                         backupFile.getAbsolutePath(), true, false);
             }
 
-            File emojiSetFile = emojiSet.getPath();
+            File emojiSetFile = emojiSet.path;
             RootTools.copyFile(emojiSetFile.getAbsolutePath(),
                     systemEmojiSetFile.getAbsolutePath(), true, false);
             applyPermissions(activity, "644", systemEmojiFilePath);
@@ -153,87 +169,32 @@ public class EmojiSwitcherUtils {
         }
     }
 
-    public static class CopyEmojiSetsFromAssetsTask extends AsyncTask<Context, Void, ArrayList<EmojiSet>> {
+    public static Observable<EmojiSetListing> currentEmojiSet(final Context context, final List<EmojiSetListing> sets) {
+        return Observable.create(new Observable.OnSubscribe<EmojiSetListing>() {
+            @Override
+            public void call(Subscriber<? super EmojiSetListing> subscriber) {
+                File emojiSetDestinationFile = new File(context.getFilesDir() + File.separator + "systemcurrent.ttf");
+                RootTools.copyFile(systemEmojiFilePath, emojiSetDestinationFile.getAbsolutePath(), true, false);
+                applyPermissions((Activity) context, "777", emojiSetDestinationFile.getAbsolutePath());
+                EmojiSet systemSet = new EmojiSet(emojiSetDestinationFile);
 
-        @Override
-        protected ArrayList<EmojiSet> doInBackground(Context... params) {
-            Context context = params[0];
-
-            ArrayList<EmojiSet> emojiSets = new ArrayList<>();
-
-            try {
-                AssetManager assets = context.getAssets();
-                String[] emojiSetPaths = assets.list("emojisets");
-                File dataEmojiSetsFolder = new File(context.getFilesDir() + File.separator + "emojisets");
-                dataEmojiSetsFolder.delete();
-                for (String emojiSetPath : emojiSetPaths) {
-                    File emojiSetDestinationFile = new File(dataEmojiSetsFolder + File.separator + emojiSetPath);
-                    FileUtils.copyInputStreamToFile(assets.open("emojisets" + File.separator + emojiSetPath), emojiSetDestinationFile);
-                    emojiSets.add(new EmojiSet(emojiSetDestinationFile));
-                }
-            } catch (IOException e) {
-                Toast.makeText(context, "Error: Initial copy", Toast.LENGTH_LONG).show();
-                e.printStackTrace();
-            }
-
-            return emojiSets;
-        }
-    }
-
-    public static class GetEmojiSetsFromDataTask extends AsyncTask<Context, Void, ArrayList<EmojiSet>> {
-
-        @Override
-        protected ArrayList<EmojiSet> doInBackground(Context... params) {
-            Context context = params[0];
-
-            ArrayList<EmojiSet> emojiSets = new ArrayList<>();
-
-            File emojiSetsFilesDir = new File(context.getFilesDir() + File.separator + "emojisets");
-            File[] emojiSetFiles = emojiSetsFilesDir.listFiles();
-            for (File emojiSetFile : emojiSetFiles) {
-                emojiSets.add(new EmojiSet(emojiSetFile));
-            }
-
-            return emojiSets;
-        }
-    }
-
-    public static class GetCurrentEmojiSetTask extends AsyncTask<Context, Void, EmojiSet> {
-        @Override
-        protected EmojiSet doInBackground(Context... params) {
-            Context context = params[0];
-
-            File emojiSetDestinationFile = new File(context.getFilesDir() + File.separator + "systemcurrent.ttf");
-            RootTools.copyFile(systemEmojiFilePath, emojiSetDestinationFile.getAbsolutePath(), true, false);
-            applyPermissions((Activity) context, "777", emojiSetDestinationFile.getAbsolutePath());
-            EmojiSet emojiSet = new EmojiSet(emojiSetDestinationFile);
-
-            try {
-                emojiSet.getHash();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return emojiSet;
-        }
-    }
-
-    public static class CompareEmojiSetTask extends AsyncTask<EmojiSet, Void, EmojiSet> {
-        @Override
-        protected EmojiSet doInBackground(EmojiSet... params) {
-            EmojiSet comparedEmojiSet = params[0];
-            try {
-                for (int i = 1; i < params.length; i++) {
-                    if (comparedEmojiSet.getHash().equals(params[i].getHash())) {
-                        comparedEmojiSet.setFriendlyName(params[i].getFriendlyName());
-                        return comparedEmojiSet;
+                boolean found = false;
+                for (EmojiSetListing set : sets) {
+                    try {
+                        if (systemSet.getFileMd5().equals(set.md5)) {
+                            found = true;
+                            subscriber.onNext(set);
+                            break;
+                        }
+                    } catch (IOException e) {
+                        subscriber.onError(e);
                     }
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
+                if (!found) {
+                    subscriber.onNext(null);
+                }
             }
-
-            return null;
-        }
+        }).subscribeOn(Schedulers.io());
     }
 
     public static class RestoreSystemEmojiTask extends AsyncTask<Activity, Void, Void> {

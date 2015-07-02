@@ -21,6 +21,9 @@ dependencies {
     compile 'com.google.android.gms:play-services-ads:7.5.0'
     compile 'commons-io:commons-io:2.4'
     compile 'com.google.guava:guava:18.0'
+    compile 'io.reactivex:rxandroid:0.25.0'
+    compile 'io.reactivex:rxandroid-framework:0.25.0'
     compile files('libs/RootTools-4.2.jar')
     compile 'com.android.support:appcompat-v7:22.2.0'
+    compile 'com.squareup.retrofit:retrofit:1.9.0'
 }

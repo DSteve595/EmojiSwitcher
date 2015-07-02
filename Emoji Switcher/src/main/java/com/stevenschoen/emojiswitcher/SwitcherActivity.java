@@ -1,22 +1,18 @@
 package com.stevenschoen.emojiswitcher;
 
-import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
@@ -26,36 +22,38 @@ import com.stevenschoen.emojiswitcher.billing.IabHelper;
 import com.stevenschoen.emojiswitcher.billing.IabResult;
 import com.stevenschoen.emojiswitcher.billing.Inventory;
 import com.stevenschoen.emojiswitcher.billing.Purchase;
+import com.stevenschoen.emojiswitcher.network.EmojiSetListing;
+import com.stevenschoen.emojiswitcher.network.EmojiSetsResponse;
 
-import org.apache.commons.io.FileUtils;
-
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SwitcherActivity extends AppCompatActivity {
+import rx.android.lifecycle.LifecycleObservable;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
+import rx.subjects.BehaviorSubject;
+
+public class SwitcherActivity extends RxAppCompatActivity {
 
     private TextView textCurrentEmojiSet;
     private ImageButton buttonRefreshEmojiState;
     private Spinner spinnerInstallEmojis;
-    private ArrayAdapter<EmojiSet> emojiSetsAdapter;
+    private int lastSelectedSetPosition;
+    private ArrayAdapter<EmojiSetListing> emojiSetsAdapter;
 
-    private ArrayList<EmojiSet> emojiSets = new ArrayList<>();
-    private EmojiSet currentSystemEmojiSet;
+    private BehaviorSubject<EmojiSetsResponse> emojiSetsResponseObservable = BehaviorSubject.create();
+    private ArrayList<EmojiSetListing> emojiSetListings = new ArrayList<>();
 
-    EmojiSwitcherUtils emojiSwitcherUtils;
+    private EmojiSwitcherUtils emojiSwitcherUtils;
 
-	private IabHelper billingHelper;
-	private boolean purchasedRemoveAds;
-	private AdView adView;
+    private IabHelper billingHelper;
+    private boolean purchasedRemoveAds;
+    private AdView adView;
 
-	@Override
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_emojiswitcher);
-
-        emojiSwitcherUtils = new EmojiSwitcherUtils();
 
         verifyRoot();
 
@@ -65,6 +63,33 @@ public class SwitcherActivity extends AppCompatActivity {
     }
 
     private void init() {
+        emojiSwitcherUtils = new EmojiSwitcherUtils();
+        LifecycleObservable.bindActivityLifecycle(lifecycle(),
+                emojiSwitcherUtils.getNetworkInterface().getEmojiSets())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action1<EmojiSetsResponse>() {
+                    @Override
+                    public void call(EmojiSetsResponse emojiSetsResponse) {
+                        emojiSetListings.clear();
+                        emojiSetListings.addAll(emojiSetsResponse.emojiSets);
+                        emojiSetsAdapter.notifyDataSetChanged();
+                        if (spinnerInstallEmojis.getSelectedItemPosition() == AdapterView.INVALID_POSITION) {
+                            for (int i = 0; i < emojiSetListings.size(); i++) {
+                                if (emojiSetListings.get(i).selectByDefault) {
+                                    spinnerInstallEmojis.setSelection(i);
+                                    break;
+                                }
+                            }
+                        }
+                        emojiSetsResponseObservable.onNext(emojiSetsResponse);
+                    }
+                }, new Action1<Throwable>() {
+                    @Override
+                    public void call(Throwable throwable) {
+                        throwable.printStackTrace();
+                    }
+                });
+
         textCurrentEmojiSet = (TextView) findViewById(R.id.text_currentemojisetdetected_is);
 
         buttonRefreshEmojiState = (ImageButton) findViewById(R.id.button_refreshemojistate);
@@ -76,9 +101,25 @@ public class SwitcherActivity extends AppCompatActivity {
         });
 
         spinnerInstallEmojis = (Spinner) findViewById(R.id.spinner_pickemojiset);
-        emojiSetsAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, emojiSets);
+        emojiSetsAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, emojiSetListings);
         emojiSetsAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerInstallEmojis.setAdapter(emojiSetsAdapter);
+
+        spinnerInstallEmojis.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                EmojiSetListing listing = (EmojiSetListing) parent.getItemAtPosition(position);
+                if (SetListingUtils.userOwnsSet(listing, billingHelper)) {
+                    lastSelectedSetPosition = position;
+                } else {
+                    parent.setSelection(lastSelectedSetPosition);
+//                    buy
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) { }
+        });
 
         Button buttonReboot = (Button) findViewById(R.id.button_reboot);
         buttonReboot.setOnClickListener(new View.OnClickListener() {
@@ -92,13 +133,16 @@ public class SwitcherActivity extends AppCompatActivity {
         buttonInstallEmojiSet.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                emojiSwitcherUtils.installEmojiSet(SwitcherActivity.this, (EmojiSet) spinnerInstallEmojis.getSelectedItem());
-                refreshCurrentSystemEmojiSet();
-                EmojiSwitcherUtils.makeRebootDialog(SwitcherActivity.this).show();
+                EmojiSetListing listing = (EmojiSetListing) spinnerInstallEmojis.getSelectedItem();
+                if (SetListingUtils.userOwnsSet(listing, billingHelper)) {
+                    emojiSwitcherUtils.installEmojiSet(SwitcherActivity.this, (EmojiSet) spinnerInstallEmojis.getSelectedItem());
+                    refreshCurrentSystemEmojiSet();
+                    EmojiSwitcherUtils.makeRebootDialog(SwitcherActivity.this).show();
+                } else {
+//                    buy
+                }
             }
         });
-
-        copyEmojiSetsToData();
 
         refreshCurrentSystemEmojiSet();
 
@@ -108,44 +152,40 @@ public class SwitcherActivity extends AppCompatActivity {
     private void refreshCurrentSystemEmojiSet() {
         verifyRoot();
 
-        new EmojiSwitcherUtils.GetCurrentEmojiSetTask() {
-            @Override
-            protected void onPreExecute() {
-                super.onPreExecute();
-                buttonRefreshEmojiState.setEnabled(false);
-            }
+        buttonRefreshEmojiState.setEnabled(false);
 
-            @Override
-            protected void onPostExecute(EmojiSet emojiSet) {
-                super.onPostExecute(emojiSet);
-                SwitcherActivity.this.currentSystemEmojiSet = emojiSet;
-                attemptShowCurrentSystemEmojiSet();
-            }
-        }.execute(this);
-    }
-
-    private void attemptShowCurrentSystemEmojiSet() {
-        if (currentSystemEmojiSet != null && !emojiSets.isEmpty() && emojiSets.size() > 0) {
-            EmojiSet[] setsToCompare = new EmojiSet[emojiSets.size() + 1];
-            setsToCompare[0] = currentSystemEmojiSet;
-            for (int i = 0; i < emojiSets.size(); i++) {
-                setsToCompare[i + 1] = emojiSets.get(i);
-            }
-            new EmojiSwitcherUtils.CompareEmojiSetTask() {
-                @Override
-                protected void onPostExecute(EmojiSet emojiSet) {
-                    super.onPostExecute(emojiSet);
-                    buttonRefreshEmojiState.setEnabled(true);
-                    if (emojiSet != null) {
-                        textCurrentEmojiSet.setTextColor(getResources().getColor(R.color.current_emojis_good));
-                        textCurrentEmojiSet.setText(emojiSet.getFriendlyName());
-                    } else {
-                        textCurrentEmojiSet.setTextColor(getResources().getColor(R.color.current_emojis_bad));
-                        textCurrentEmojiSet.setText(R.string.unknown);
+        LifecycleObservable.bindActivityLifecycle(lifecycle(),
+                emojiSetsResponseObservable)
+                .subscribe(new Action1<EmojiSetsResponse>() {
+                    @Override
+                    public void call(EmojiSetsResponse emojiSetsResponse) {
+                        EmojiSwitcherUtils.currentEmojiSet(SwitcherActivity.this, emojiSetListings)
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(new Action1<EmojiSetListing>() {
+                                    @Override
+                                    public void call(EmojiSetListing emojiSetListing) {
+                                        if (emojiSetListing != null) {
+                                            textCurrentEmojiSet.setTextColor(getResources().getColor(R.color.current_emojis_good));
+                                            textCurrentEmojiSet.setText(emojiSetListing.name);
+                                        } else {
+                                            textCurrentEmojiSet.setTextColor(getResources().getColor(R.color.current_emojis_bad));
+                                            textCurrentEmojiSet.setText(R.string.unknown);
+                                        }
+                                        buttonRefreshEmojiState.setEnabled(true);
+                                    }
+                                }, new Action1<Throwable>() {
+                                    @Override
+                                    public void call(Throwable throwable) {
+                                        throwable.printStackTrace();
+                                    }
+                                });
                     }
-                }
-            }.execute(setsToCompare);
-        }
+                }, new Action1<Throwable>() {
+                    @Override
+                    public void call(Throwable throwable) {
+                        throwable.printStackTrace();
+                    }
+                });
     }
 
     private void verifyRoot() {
@@ -156,141 +196,78 @@ public class SwitcherActivity extends AppCompatActivity {
         }
     }
 
-    private void copyEmojiSetsToData() {
-        File filesDir = getFilesDir();
-        final File doneCopyingFile = new File(filesDir + File.separator + "donecopying");
-        int versionCode = 0;
-        try {
-            versionCode = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            boolean copy = (!doneCopyingFile.exists() || !FileUtils.readFileToString(doneCopyingFile).equals(String.valueOf(versionCode)));
-            if (copy) {
-                final int finalVersionCode = versionCode;
-                new EmojiSwitcherUtils.CopyEmojiSetsFromAssetsTask() {
-                    ProgressDialog loadingDialog;
-
-                    @Override
-                    protected void onPreExecute() {
-                        super.onPreExecute();
-                        loadingDialog = ProgressDialog.show(SwitcherActivity.this, "Please wait", "Preparing emoji sets", true, false);
-                    }
-
-                    @Override
-                    protected void onPostExecute(ArrayList<EmojiSet> emojiSets) {
-                        super.onPostExecute(emojiSets);
-                        SwitcherActivity.this.emojiSets.clear();
-                        SwitcherActivity.this.emojiSets.addAll(emojiSets);
-                        emojiSetsAdapter.notifyDataSetChanged();
-                        try {
-                            FileUtils.write(doneCopyingFile, String.valueOf(finalVersionCode));
-                        } catch (IOException e) {
-                            Toast.makeText(SwitcherActivity.this, "Error: Writing DC", Toast.LENGTH_LONG).show();
-                            e.printStackTrace();
-                        }
-                        loadingDialog.dismiss();
-                        attemptShowCurrentSystemEmojiSet();
-                    }
-                }.execute(this);
-            } else {
-                final int finalVersionCode = versionCode;
-                new EmojiSwitcherUtils.GetEmojiSetsFromDataTask() {
-                    @Override
-                    protected void onPostExecute(ArrayList<EmojiSet> emojiSets) {
-                        super.onPostExecute(emojiSets);
-                        SwitcherActivity.this.emojiSets.clear();
-                        SwitcherActivity.this.emojiSets.addAll(emojiSets);
-                        emojiSetsAdapter.notifyDataSetChanged();
-                        try {
-                            FileUtils.write(doneCopyingFile, String.valueOf(finalVersionCode));
-                        } catch (IOException e) {
-                            Toast.makeText(SwitcherActivity.this, "Error: Writing DC", Toast.LENGTH_LONG).show();
-                            e.printStackTrace();
-                        }
-                    }
-                }.execute(this);
+    private void setupBilling() {
+        billingHelper = new IabHelper(this, EmojiSwitcherUtils.PLAY_LICENSING_KEY);
+        billingHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
+            @Override
+            public void onIabSetupFinished(IabResult result) {
+                if (result.isSuccess()) {
+                    checkAds();
+                } else {
+                    Log.d("asdf", "Problem setting up in-app billing: " + result);
+                }
             }
-        } catch (IOException e) {
-            Toast.makeText(this, "Error: If copy", Toast.LENGTH_LONG).show();
-            e.printStackTrace();
+        });
+    }
+
+    private void checkAds() {
+        List<String> additionalSkuList = new ArrayList<>();
+        additionalSkuList.add(EmojiSwitcherUtils.SKU_REMOVEADS);
+        billingHelper.queryInventoryAsync(true, additionalSkuList,
+                new IabHelper.QueryInventoryFinishedListener() {
+                    @Override
+                    public void onQueryInventoryFinished(IabResult result, Inventory inv) {
+                        if (result.isSuccess()) {
+                            purchasedRemoveAds = inv.hasPurchase(EmojiSwitcherUtils.SKU_REMOVEADS);
+                            final View removeAdsButton = findViewById(R.id.button_removeads);
+                            if (!purchasedRemoveAds) {
+                                AdRequest adRequest = new AdRequest.Builder().build();
+
+                                adView = new AdView(SwitcherActivity.this);
+                                adView.setAdSize(AdSize.SMART_BANNER);
+                                adView.setAdUnitId(EmojiSwitcherUtils.GOOGLE_ADS_UNITID);
+                                FrameLayout adHolder = (FrameLayout) findViewById(R.id.holder_ad);
+                                adHolder.addView(adView);
+                                adView.loadAd(adRequest);
+
+                                removeAdsButton.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View v) {
+                                        billingHelper.launchPurchaseFlow(SwitcherActivity.this,
+                                                EmojiSwitcherUtils.SKU_REMOVEADS, 0, new IabHelper.OnIabPurchaseFinishedListener() {
+                                                    @Override
+                                                    public void onIabPurchaseFinished(IabResult result, Purchase info) {
+                                                        checkAds();
+                                                    }
+                                                });
+                                    }
+                                });
+                                removeAdsButton.setAlpha(0);
+                                removeAdsButton.setVisibility(View.VISIBLE);
+                                removeAdsButton.animate().alpha(0.75f);
+                            } else {
+                                removeAdsButton.animate().alpha(0).withEndAction(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        removeAdsButton.setVisibility(View.GONE);
+                                    }
+                                });
+                            }
+                        }
+                    }
+                });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (billingHelper != null) {
+            billingHelper.handleActivityResult(requestCode, resultCode, data);
         }
     }
 
-	private void setupBilling() {
-		billingHelper = new IabHelper(this, EmojiSwitcherUtils.PLAY_LICENSING_KEY);
-		billingHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
-			@Override
-			public void onIabSetupFinished(IabResult result) {
-				if (result.isSuccess()) {
-					checkAds();
-				} else {
-					Log.d("asdf", "Problem setting up in-app billing: " + result);
-				}
-			}
-		});
-	}
-
-	private void checkAds() {
-		List<String> additionalSkuList = new ArrayList<>();
-		additionalSkuList.add(EmojiSwitcherUtils.SKU_REMOVEADS);
-		billingHelper.queryInventoryAsync(true, additionalSkuList,
-				new IabHelper.QueryInventoryFinishedListener() {
-					@Override
-					public void onQueryInventoryFinished(IabResult result, Inventory inv) {
-						if (result.isSuccess()) {
-							purchasedRemoveAds = inv.hasPurchase(EmojiSwitcherUtils.SKU_REMOVEADS);
-							final View removeAdsButton = findViewById(R.id.button_removeads);
-							if (!purchasedRemoveAds) {
-								AdRequest adRequest = new AdRequest.Builder().build();
-
-								adView = new AdView(SwitcherActivity.this);
-								adView.setAdSize(AdSize.SMART_BANNER);
-								adView.setAdUnitId(EmojiSwitcherUtils.GOOGLE_ADS_UNITID);
-								FrameLayout adHolder = (FrameLayout) findViewById(R.id.holder_ad);
-								adHolder.addView(adView);
-								adView.loadAd(adRequest);
-
-								removeAdsButton.setOnClickListener(new View.OnClickListener() {
-									@Override
-									public void onClick(View v) {
-										billingHelper.launchPurchaseFlow(SwitcherActivity.this,
-												EmojiSwitcherUtils.SKU_REMOVEADS, 0, new IabHelper.OnIabPurchaseFinishedListener() {
-													@Override
-													public void onIabPurchaseFinished(IabResult result, Purchase info) {
-														checkAds();
-													}
-												});
-									}
-								});
-								removeAdsButton.setAlpha(0);
-								removeAdsButton.setVisibility(View.VISIBLE);
-								removeAdsButton.animate().alpha(0.75f);
-							} else {
-								removeAdsButton.animate().alpha(0).withEndAction(new Runnable() {
-									@Override
-									public void run() {
-										removeAdsButton.setVisibility(View.GONE);
-									}
-								});
-							}
-						}
-					}
-				});
-	}
-
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		super.onActivityResult(requestCode, resultCode, data);
-
-		if (billingHelper != null) {
-			billingHelper.handleActivityResult(requestCode, resultCode, data);
-		}
-	}
-
-	@Override
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.emojiswitcher, menu);
         return true;
@@ -315,27 +292,27 @@ public class SwitcherActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-	@Override
-	protected void onResume() {
-		super.onResume();
+    @Override
+    protected void onResume() {
+        super.onResume();
 
-		if (adView != null) adView.resume();
-	}
+        if (adView != null) adView.resume();
+    }
 
-	@Override
-	protected void onPause() {
-		super.onPause();
+    @Override
+    protected void onPause() {
+        super.onPause();
 
-		if (adView != null) adView.pause();
-	}
+        if (adView != null) adView.pause();
+    }
 
-	@Override
-	protected void onDestroy() {
-		super.onDestroy();
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
 
-		if (billingHelper != null) billingHelper.dispose();
-		billingHelper = null;
+        if (billingHelper != null) billingHelper.dispose();
+        billingHelper = null;
 
-		if (adView != null) adView.destroy();
-	}
+        if (adView != null) adView.destroy();
+    }
 }
