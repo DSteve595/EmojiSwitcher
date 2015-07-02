@@ -37,7 +37,7 @@ public class EmojiSwitcherUtils {
 
     private static final String systemFontsPath = "/system/fonts/";
     private static final String systemEmojiFilePath = systemFontsPath + "NotoColorEmoji.ttf";
-    private static final String htcFilePath =  systemFontsPath + "NotoColorEmoji-htc.ttf";
+    private static final String htcFilePath = systemFontsPath + "AndroidEmoji-htc.ttf";
     private static final String htcBackupFilePath = htcFilePath + ".bak";
 
     public static String systemEmojiBackupFilePath(Context context) {
