@@ -2,6 +2,7 @@ package com.stevenschoen.emojiswitcher;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -65,7 +66,7 @@ public class SwitcherActivity extends RxAppCompatActivity {
     private void init() {
         emojiSwitcherUtils = new EmojiSwitcherUtils();
         LifecycleObservable.bindActivityLifecycle(lifecycle(),
-                emojiSwitcherUtils.getNetworkInterface().getEmojiSets())
+                EmojiSwitcherUtils.getNetworkInterface(this).getEmojiSets())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<EmojiSetsResponse>() {
                     @Override
@@ -286,6 +287,11 @@ public class SwitcherActivity extends RxAppCompatActivity {
                         refreshCurrentSystemEmojiSet();
                     }
                 }.execute(this);
+                return true;
+            case R.id.action_manage_downloads:
+                ManageDownloadsFragment fragment = (ManageDownloadsFragment) Fragment.instantiate(this, ManageDownloadsFragment.class.getName());
+                fragment.show(getSupportFragmentManager(), "managedownloads");
+
                 return true;
         }
 

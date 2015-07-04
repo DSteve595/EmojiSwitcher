@@ -3,14 +3,26 @@
     <style name="EmojiSwitcher" parent="Theme.AppCompat.Light">
         <item name="colorPrimary">@color/emojiswitcher_orange</item>
         <item name="colorPrimaryDark">@color/emojiswitcher_orange_dark</item>
-        <item name="colorAccent">@color/emojiswitcher_orange_faded1</item>
+        <item name="colorAccent">@color/emojiswitcher_orange</item>
         <item name="colorButtonNormal">@color/emojiswitcher_orange_faded2</item>
-        
+
+        <item name="android:windowBackground">@drawable/gradient_orange</item>
         <item name="autoScaleTextViewStyle">@style/EmojiSwitcher.AutoScaleTextView</item>
-        <item name="windowActionBarOverlay">true</item>
         <item name="actionBarStyle">@style/EmojiSwitcher.ActionBar</item>
+        <item name="alertDialogTheme">@style/EmojiSwitcher.AlertDialog</item>
         <item name="android:divider">@drawable/divider</item>
         <item name="android:dividerPadding">8dp</item>
+    </style>
+
+    <style name="EmojiSwitcher.AlertDialog" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="colorPrimary">@color/emojiswitcher_orange</item>
+        <item name="colorPrimaryDark">@color/emojiswitcher_orange_dark</item>
+        <item name="colorAccent">@color/emojiswitcher_orange</item>
+        <item name="colorButtonNormal">@color/emojiswitcher_orange_faded2</item>
+    </style>
+
+    <style name="EmojiSwitcher.ActionBarOverlay" parent="EmojiSwitcher">
+        <item name="windowActionBarOverlay">true</item>
     </style>
 
     <style name="EmojiSwitcher.ActionBar" parent="Widget.AppCompat.Light.ActionBar.Solid">

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Emoji Switcher</string>
+    <string name="emoji_switcher">Emoji Switcher</string>
     <string name="action_settings">Settings</string>
     <string name="current_emojis_detected">Current emojis detected:</string>
     <string name="unknown">Unknown</string>
@@ -17,5 +17,6 @@
     <string name="about">Fonts provided by gonsa from XDA. App by Steven Schoen.</string>
     <string name="reboot">Reboot</string>
     <string name="restore_default">Restore default</string>
+    <string name="manage_downloads">Manage downloads</string>
 
 </resources>

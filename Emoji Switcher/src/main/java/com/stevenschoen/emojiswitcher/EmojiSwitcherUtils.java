@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeoutException;
 
-import retrofit.RestAdapter;
 import rx.Observable;
 import rx.Subscriber;
 import rx.schedulers.Schedulers;
@@ -44,16 +43,8 @@ public class EmojiSwitcherUtils {
     private static final String htcFilePath = systemFontsPath + "AndroidEmoji-htc.ttf";
     private static final String htcBackupFilePath = htcFilePath + ".bak";
 
-    private NetworkInterface networkInterface;
-
-    public EmojiSwitcherUtils() {
-        networkInterface = new RestAdapter.Builder()
-                .setEndpoint(NetworkInterface.URL)
-                .build().create(NetworkInterface.class);
-    }
-
-    public NetworkInterface getNetworkInterface() {
-        return networkInterface;
+    public static NetworkInterface getNetworkInterface(Context context) {
+        return ((EmojiSwitcherApplication) context.getApplicationContext()).getNetworkInterface();
     }
 
     public static String systemEmojiBackupFilePath(Context context) {
