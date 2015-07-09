@@ -5,6 +5,7 @@ import com.google.common.io.Files;
 import com.stevenschoen.emojiswitcher.network.EmojiSetListing;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public class EmojiSet extends EmojiSetListing {
@@ -13,7 +14,12 @@ public class EmojiSet extends EmojiSetListing {
 
     private String fileMd5;
 
-    public EmojiSet(File path) {
+    public EmojiSet(EmojiSetListing listing, File path) {
+        name = listing.name;
+        url = listing.url;
+        md5 = listing.md5;
+        googlePlaySku = listing.googlePlaySku;
+        selectByDefault = listing.selectByDefault;
         this.path = path;
     }
 
@@ -26,6 +32,10 @@ public class EmojiSet extends EmojiSetListing {
     }
 
     public boolean isIntact() throws IOException {
-        return (getFileMd5().equals(md5));
+        try {
+            return (getFileMd5().equals(md5));
+        } catch (FileNotFoundException e) {
+            return false;
+        }
     }
 }

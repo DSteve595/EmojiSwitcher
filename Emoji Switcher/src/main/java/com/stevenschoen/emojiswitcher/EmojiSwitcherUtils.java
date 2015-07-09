@@ -5,9 +5,9 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.widget.Toast;
 
 import com.stericson.RootShell.exceptions.RootDeniedException;
 import com.stericson.RootShell.execution.Command;
@@ -15,16 +15,25 @@ import com.stericson.RootShell.execution.Shell;
 import com.stericson.RootTools.RootTools;
 import com.stevenschoen.emojiswitcher.network.EmojiSetListing;
 import com.stevenschoen.emojiswitcher.network.NetworkInterface;
+import com.thin.downloadmanager.DownloadRequest;
+import com.thin.downloadmanager.DownloadStatusListener;
+import com.thin.downloadmanager.ThinDownloadManager;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import rx.Observable;
 import rx.Subscriber;
+import rx.functions.Action1;
 import rx.schedulers.Schedulers;
+import rx.subjects.PublishSubject;
 
 public class EmojiSwitcherUtils {
 	public static final String GOOGLE_ADS_UNITID = "ca-app-pub-9259165898539273/5321636233";
@@ -35,8 +44,6 @@ public class EmojiSwitcherUtils {
 			"XyPGOw/f05Bn0GIOhXcVwh7cp2KjhRHzwTPBUqzZymBY7QzKl8bw8yXr/Q6U4yCdQajHhh3g64PM4YB13peo" +
 			"amCQIDAQAB";
 	public static final String SKU_REMOVEADS = "emojiswitcher_removeads";
-
-    private InstallEmojiSetTask currentInstallTask;
 
     private static final String systemFontsPath = "/system/fonts/";
     private static final String systemEmojiFilePath = systemFontsPath + "NotoColorEmoji.ttf";
@@ -69,53 +76,156 @@ public class EmojiSwitcherUtils {
         RootTools.deleteFileOrDirectory(htcBackupFilePath, false);
     }
 
-	public void installEmojiSet(Context context, EmojiSet emojiSet) {
-        if (isHtc()) {
-            applyHtcFix();
-        }
+	public Observable<InstallProgress> installEmojiSet(final Context context, final EmojiSetListing listing) {
+        return Observable.create(new Observable.OnSubscribe<InstallProgress>() {
+            @Override
+            public void call(final Subscriber<? super InstallProgress> subscriber) {
+                try {
+                    final EmojiSet emojiSet = new EmojiSet(listing, new File(filePath(context, listing)));
 
-        if (currentInstallTask != null) {
-            currentInstallTask.cancel(true);
-            currentInstallTask = null;
-            installEmojiSet(context, emojiSet);
-        } else {
-            currentInstallTask = new InstallEmojiSetTask();
-            currentInstallTask.execute(context, emojiSet);
-        }
+                    final boolean hasHtcStage = isHtc();
+                    final boolean hasDownloadStage = !isDownloaded(emojiSet);
+
+                    if (isHtc()) {
+                        InstallProgress progress = new InstallProgress(hasHtcStage, hasDownloadStage);
+                        progress.currentStage = InstallProgress.Stage.HtcFix;
+                        progress.currentStageProgress = 0;
+                        subscriber.onNext(progress);
+                        applyHtcFix();
+                        progress.currentStageProgress = 100;
+                        subscriber.onNext(progress);
+                    }
+
+                    final PublishSubject<Boolean> fileReadySubject = PublishSubject.create();
+                    fileReadySubject.subscribe(new Subscriber<Boolean>() {
+                        @Override
+                        public void onCompleted() { }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            subscriber.onError(e);
+                        }
+
+                        @Override
+                        public void onNext(Boolean ready) {
+                            if (ready) {
+                                InstallProgress progress = new InstallProgress(hasHtcStage, hasDownloadStage);
+                                progress.currentStage = InstallProgress.Stage.Backup;
+                                subscriber.onNext(progress);
+                                File systemEmojiSetFile = new File(systemEmojiFilePath);
+                                File backupFile = new File(systemEmojiBackupFilePath(context));
+                                if (backupFile.length() == 0) {
+                                    RootTools.copyFile(systemEmojiSetFile.getAbsolutePath(),
+                                            backupFile.getAbsolutePath(), true, false);
+                                }
+
+                                progress = new InstallProgress(hasHtcStage, hasDownloadStage);
+                                progress.currentStage = InstallProgress.Stage.Install;
+                                subscriber.onNext(progress);
+
+                                RootTools.copyFile(emojiSet.path.getAbsolutePath(),
+                                        systemEmojiSetFile.getAbsolutePath(), true, false);
+                                try {
+                                    applyPermissions("644", systemEmojiFilePath);
+                                } catch (Exception e) {
+                                    subscriber.onError(e);
+                                }
+
+                                subscriber.onCompleted();
+                                unsubscribe();
+                            }
+                        }
+                    });
+
+                    if (!isDownloaded(emojiSet)) {
+                        final InstallProgress progress = new InstallProgress(hasHtcStage, hasDownloadStage);
+                        progress.currentStage = InstallProgress.Stage.Download;
+                        subscriber.onNext(progress);
+
+                        String path = emojiSet.path.getAbsolutePath();
+                        emojiSet.path = new File(path);
+                        FileUtils.deleteQuietly(emojiSet.path);
+                        emojiSet.path.mkdirs();
+
+                        ThinDownloadManager downloadManager = new ThinDownloadManager();
+                        DownloadRequest request = new DownloadRequest(Uri.parse(listing.url));
+                        request.setDestinationURI(Uri.parse(path));
+                        final PublishSubject<Integer> downloadProgressSubject = PublishSubject.create();
+                        downloadProgressSubject.sample(250, TimeUnit.MILLISECONDS)
+                                .subscribe(new Action1<Integer>() {
+                                    @Override
+                                    public void call(Integer percent) {
+                                        progress.currentStageProgress = percent;
+                                        subscriber.onNext(progress);
+                                    }
+                                }, new Action1<Throwable>() {
+                                    @Override
+                                    public void call(Throwable throwable) {
+                                        subscriber.onError(throwable);
+                                    }
+                                });
+                        request.setDownloadListener(new DownloadStatusListener() {
+                            @Override
+                            public void onDownloadComplete(int id) {
+                                fileReadySubject.onNext(true);
+                            }
+
+                            @Override
+                            public void onDownloadFailed(int id, int errorCode, String errorMessage) {
+                                subscriber.onError(new Exception("Download failed, code " + errorMessage + ": " + errorMessage));
+                            }
+
+                            @Override
+                            public void onProgress(int id, long l, int percent) {
+                                downloadProgressSubject.onNext(percent);
+                            }
+                        });
+                        downloadManager.add(request);
+                    } else {
+                        fileReadySubject.onNext(true);
+                    }
+                } catch (Exception e) {
+                    subscriber.onError(e);
+                }
+            }
+        });
     }
 
-    public static void applyPermissions(final Activity activity, String permissions, String path) {
-        try {
-            RootTools.remount(path, "RW");
-            Shell shell = RootTools.getShell(true);
-            Command commandPermission = new Command(0, "chmod " + permissions + " " + path);
-            shell.add(commandPermission);
-            shell.close();
-        } catch (TimeoutException e) {
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(activity, "Error: Timeout", Toast.LENGTH_LONG).show();
-                }
-            });
-            e.printStackTrace();
-        } catch (RootDeniedException e) {
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(activity, "Error: Root denied", Toast.LENGTH_LONG).show();
-                }
-            });
-            e.printStackTrace();
-        } catch (IOException e) {
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(activity, "Error: IOException", Toast.LENGTH_LONG).show();
-                }
-            });
-            e.printStackTrace();
+    public static class InstallProgress {
+        public enum Stage {
+            HtcFix, Download, Backup, Install
         }
+
+        public boolean hasHtcStage;
+        public boolean hasDownloadStage;
+
+        public InstallProgress(boolean hasHtcStage, boolean hasDownloadStage) {
+            this.hasHtcStage = hasHtcStage;
+            this.hasDownloadStage = hasDownloadStage;
+        }
+
+        public Stage currentStage;
+        public int currentStageProgress = 0;
+    }
+
+    public static boolean isDownloaded(EmojiSet emojiSet) throws IOException {
+        return (emojiSet.path != null && emojiSet.isIntact());
+    }
+
+    private static String filenameFromUrl(String url) {
+        return FilenameUtils.getName(url);
+    }
+
+    private static String filePath(Context context, EmojiSetListing listing) {
+        return context.getFilesDir() + File.separator + "emojisets" + File.separator + filenameFromUrl(listing.url);
+    }
+
+    public static void applyPermissions(String permissions, String path) throws TimeoutException, RootDeniedException, IOException {
+        RootTools.remount(path, "RW");
+        Shell shell = RootTools.getShell(true);
+        Command commandPermission = new Command(0, "chmod " + permissions + " " + path);
+        shell.add(commandPermission);
+        shell.close();
     }
 
     public static Dialog makeRebootDialog(Context context) {
@@ -138,27 +248,27 @@ public class EmojiSwitcherUtils {
         return builder.create();
     }
 
-    private static class InstallEmojiSetTask extends AsyncTask<Object, Void, Void> {
-        @Override
-        protected Void doInBackground(Object... params) {
-            final Activity activity = (Activity) params[0];
-            EmojiSet emojiSet = (EmojiSet) params[1];
-
-            File systemEmojiSetFile = new File(systemEmojiFilePath);
-            File backupFile = new File(systemEmojiBackupFilePath(activity));
-            if (backupFile.length() == 0) {
-                RootTools.copyFile(systemEmojiSetFile.getAbsolutePath(),
-                        backupFile.getAbsolutePath(), true, false);
-            }
-
-            File emojiSetFile = emojiSet.path;
-            RootTools.copyFile(emojiSetFile.getAbsolutePath(),
-                    systemEmojiSetFile.getAbsolutePath(), true, false);
-            applyPermissions(activity, "644", systemEmojiFilePath);
-
-            return null;
-        }
-    }
+//    private static class InstallEmojiSetTask extends AsyncTask<Object, Void, Void> {
+//        @Override
+//        protected Void doInBackground(Object... params) {
+//            final Activity activity = (Activity) params[0];
+//            EmojiSet emojiSet = (EmojiSet) params[1];
+//
+//            File systemEmojiSetFile = new File(systemEmojiFilePath);
+//            File backupFile = new File(systemEmojiBackupFilePath(activity));
+//            if (backupFile.length() == 0) {
+//                RootTools.copyFile(systemEmojiSetFile.getAbsolutePath(),
+//                        backupFile.getAbsolutePath(), true, false);
+//            }
+//
+//            File emojiSetFile = emojiSet.path;
+//            RootTools.copyFile(emojiSetFile.getAbsolutePath(),
+//                    systemEmojiSetFile.getAbsolutePath(), true, false);
+//            applyPermissions(activity, "644", systemEmojiFilePath);
+//
+//            return null;
+//        }
+//    }
 
     public static Observable<EmojiSetListing> currentEmojiSet(final Context context, final List<EmojiSetListing> sets) {
         return Observable.create(new Observable.OnSubscribe<EmojiSetListing>() {
@@ -166,8 +276,12 @@ public class EmojiSwitcherUtils {
             public void call(Subscriber<? super EmojiSetListing> subscriber) {
                 File emojiSetDestinationFile = new File(context.getFilesDir() + File.separator + "systemcurrent.ttf");
                 RootTools.copyFile(systemEmojiFilePath, emojiSetDestinationFile.getAbsolutePath(), true, false);
-                applyPermissions((Activity) context, "777", emojiSetDestinationFile.getAbsolutePath());
-                EmojiSet systemSet = new EmojiSet(emojiSetDestinationFile);
+                try {
+                    applyPermissions("777", emojiSetDestinationFile.getAbsolutePath());
+                } catch (Exception e) {
+                    subscriber.onError(e);
+                }
+                EmojiSet systemSet = new EmojiSet(new EmojiSetListing(), emojiSetDestinationFile);
 
                 boolean found = false;
                 for (EmojiSetListing set : sets) {
@@ -200,7 +314,11 @@ public class EmojiSwitcherUtils {
             }
 
             RootTools.copyFile(systemEmojiBackupFilePath(activity[0]), systemEmojiFilePath, true, true);
-            applyPermissions(activity[0], "644", systemEmojiFilePath);
+            try {
+                applyPermissions("644", systemEmojiFilePath);
+            } catch (TimeoutException | RootDeniedException | IOException e) {
+                e.printStackTrace();
+            }
 
             return null;
         }

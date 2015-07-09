@@ -78,7 +78,7 @@ public class ManageDownloadsFragment extends RxDialogFragment {
 
         return new AlertDialog.Builder(getActivity())
                 .setView(view)
-                .setTitle(R.string.manage_downloads)
+                .setTitle(R.string.downloaded_emoji)
                 .setPositiveButton("OK", null)
                 .create();
     }

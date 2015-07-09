@@ -29,4 +29,5 @@ dependencies {
     compile 'com.yqritc:recyclerview-flexibledivider:1.2.5'
     compile 'org.solovyev.android.views:linear-layout-manager:0.4@aar'
     compile 'com.squareup.retrofit:retrofit:1.9.0'
+    compile 'com.mani:thindownloadmanager:1.0.0'
 }

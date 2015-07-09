@@ -18,7 +18,6 @@ import android.widget.TextView;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
-import com.stericson.RootTools.RootTools;
 import com.stevenschoen.emojiswitcher.billing.IabHelper;
 import com.stevenschoen.emojiswitcher.billing.IabResult;
 import com.stevenschoen.emojiswitcher.billing.Inventory;
@@ -29,6 +28,7 @@ import com.stevenschoen.emojiswitcher.network.EmojiSetsResponse;
 import java.util.ArrayList;
 import java.util.List;
 
+import rx.Observer;
 import rx.android.lifecycle.LifecycleObservable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
@@ -39,7 +39,6 @@ public class SwitcherActivity extends RxAppCompatActivity {
     private TextView textCurrentEmojiSet;
     private ImageButton buttonRefreshEmojiState;
     private Spinner spinnerInstallEmojis;
-    private int lastSelectedSetPosition;
     private ArrayAdapter<EmojiSetListing> emojiSetsAdapter;
 
     private BehaviorSubject<EmojiSetsResponse> emojiSetsResponseObservable = BehaviorSubject.create();
@@ -107,6 +106,8 @@ public class SwitcherActivity extends RxAppCompatActivity {
         spinnerInstallEmojis.setAdapter(emojiSetsAdapter);
 
         spinnerInstallEmojis.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            int lastSelectedSetPosition;
+
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 EmojiSetListing listing = (EmojiSetListing) parent.getItemAtPosition(position);
@@ -122,23 +123,34 @@ public class SwitcherActivity extends RxAppCompatActivity {
             public void onNothingSelected(AdapterView<?> parent) { }
         });
 
-        Button buttonReboot = (Button) findViewById(R.id.button_reboot);
-        buttonReboot.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                RootTools.restartAndroid();
-            }
-        });
-
         Button buttonInstallEmojiSet = (Button) findViewById(R.id.button_installemojiset);
         buttonInstallEmojiSet.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 EmojiSetListing listing = (EmojiSetListing) spinnerInstallEmojis.getSelectedItem();
                 if (SetListingUtils.userOwnsSet(listing, billingHelper)) {
-                    emojiSwitcherUtils.installEmojiSet(SwitcherActivity.this, (EmojiSet) spinnerInstallEmojis.getSelectedItem());
-                    refreshCurrentSystemEmojiSet();
-                    EmojiSwitcherUtils.makeRebootDialog(SwitcherActivity.this).show();
+                    LifecycleObservable.bindActivityLifecycle(lifecycle(),
+                            emojiSwitcherUtils.installEmojiSet(SwitcherActivity.this, (EmojiSetListing) spinnerInstallEmojis.getSelectedItem()))
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(new Observer<EmojiSwitcherUtils.InstallProgress>() {
+                                @Override
+                                public void onCompleted() {
+                                    Log.d("asdf", "onCompleted");
+                                    refreshCurrentSystemEmojiSet();
+                                    EmojiSwitcherUtils.makeRebootDialog(SwitcherActivity.this).show();
+                                }
+
+                                @Override
+                                public void onError(Throwable e) {
+                                    e.printStackTrace();
+                                    refreshCurrentSystemEmojiSet();
+                                }
+
+                                @Override
+                                public void onNext(EmojiSwitcherUtils.InstallProgress installProgress) {
+                                    Log.d("asdf", "onNext, stage: " + installProgress.currentStage + ", progress: " + installProgress.currentStageProgress);
+                                }
+                            });
                 } else {
 //                    buy
                 }
@@ -221,7 +233,7 @@ public class SwitcherActivity extends RxAppCompatActivity {
                         if (result.isSuccess()) {
                             purchasedRemoveAds = inv.hasPurchase(EmojiSwitcherUtils.SKU_REMOVEADS);
                             final View removeAdsButton = findViewById(R.id.button_removeads);
-                            if (!purchasedRemoveAds) {
+                            if (!purchasedRemoveAds && !BuildConfig.DEBUG) {
                                 AdRequest adRequest = new AdRequest.Builder().build();
 
                                 adView = new AdView(SwitcherActivity.this);

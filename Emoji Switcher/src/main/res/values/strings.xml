@@ -14,9 +14,10 @@
     <string name="failed_to_get_root">Failed to get root!</string>
     <string name="switch_emojis_to">Switch emojis to…</string>
     <string name="set_emojis_to_">Set emojis to</string>
-    <string name="about">Fonts provided by gonsa from XDA. App by Steven Schoen.</string>
+    <string name="about">Original fonts by gonsa from XDA. App by Steven Schoen.</string>
     <string name="reboot">Reboot</string>
     <string name="restore_default">Restore default</string>
     <string name="manage_downloads">Manage downloads</string>
+    <string name="downloaded_emoji">Downloaded emoji</string>
 
 </resources>
