@@ -9,7 +9,8 @@
     <string name="refresh">Refresh</string>
     <string name="try_again">Try again</string>
     <string name="check_root">Check root</string>
-    <string name="root_problem">There was a problem getting root access, which is needed to modify the built-in emoji data.\n\nDoes this app have root permissions?</string>
+    <string name="root_problem">There was a problem getting root access.\n\nRoot access is given after you "root" your device, which lets apps do advanced things like modify system files.
+It\'s a different process for each device.\n\nDoes this app have root permissions?</string>
     <string name="are_you_rooted">Are you rooted?</string>
     <string name="failed_to_get_root">Failed to get root!</string>
     <string name="switch_emojis_to">Switch emojis to…</string>

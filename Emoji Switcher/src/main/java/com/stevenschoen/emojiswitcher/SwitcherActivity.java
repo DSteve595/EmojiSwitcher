@@ -1,6 +1,8 @@
 package com.stevenschoen.emojiswitcher;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -14,6 +16,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
@@ -50,6 +53,14 @@ public class SwitcherActivity extends RxAppCompatActivity implements InstallEmoj
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm.getActiveNetworkInfo() == null || !cm.getActiveNetworkInfo().isConnected()) {
+            Toast.makeText(this, "This app needs internet access to work.", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
         setContentView(R.layout.activity_emojiswitcher);
 
         verifyRoot();
@@ -97,21 +108,28 @@ public class SwitcherActivity extends RxAppCompatActivity implements InstallEmoj
         });
 
         spinnerInstallEmojis = (Spinner) findViewById(R.id.spinner_pickemojiset);
-        emojiSetsAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, emojiSetListings);
-        emojiSetsAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        emojiSetsAdapter = new EmojiSetSelectionAdapter(this, emojiSetListings);
         spinnerInstallEmojis.setAdapter(emojiSetsAdapter);
 
         spinnerInstallEmojis.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             int lastSelectedSetPosition;
 
             @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            public void onItemSelected(final AdapterView<?> parent, View view, final int position, long id) {
                 EmojiSetListing listing = (EmojiSetListing) parent.getItemAtPosition(position);
                 if (SetListingUtils.userOwnsSet(listing, billingHelper)) {
                     lastSelectedSetPosition = position;
                 } else {
                     parent.setSelection(lastSelectedSetPosition);
-//                    buy
+                    SetListingUtils.purchaseSet(SwitcherActivity.this, listing, billingHelper,
+                            new IabHelper.OnIabPurchaseFinishedListener() {
+                                @Override
+                                public void onIabPurchaseFinished(IabResult result, Purchase info) {
+                                    if (result.isSuccess()) {
+                                        parent.setSelection(position);
+                                    }
+                                }
+                            });
                 }
             }
 
@@ -123,14 +141,19 @@ public class SwitcherActivity extends RxAppCompatActivity implements InstallEmoj
         buttonInstallEmojiSet.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                EmojiSetListing listing = (EmojiSetListing) spinnerInstallEmojis.getSelectedItem();
+                final EmojiSetListing listing = (EmojiSetListing) spinnerInstallEmojis.getSelectedItem();
                 if (SetListingUtils.userOwnsSet(listing, billingHelper)) {
-                    Bundle options = new Bundle();
-                    options.putParcelable("listing", (EmojiSetListing) spinnerInstallEmojis.getSelectedItem());
-                    InstallEmojiFragment installFragment = (InstallEmojiFragment) Fragment.instantiate(SwitcherActivity.this, InstallEmojiFragment.class.getName(), options);
-                    installFragment.show(getSupportFragmentManager(), "install");
+                    installSet(listing);
                 } else {
-//                    buy
+                    SetListingUtils.purchaseSet(SwitcherActivity.this, listing, billingHelper,
+                            new IabHelper.OnIabPurchaseFinishedListener() {
+                                @Override
+                                public void onIabPurchaseFinished(IabResult result, Purchase info) {
+                                    if (result.isSuccess()) {
+                                        installSet(listing);
+                                    }
+                                }
+                            });
                 }
             }
         });
@@ -138,6 +161,13 @@ public class SwitcherActivity extends RxAppCompatActivity implements InstallEmoj
         refreshCurrentSystemEmojiSet();
 
         setupBilling();
+    }
+
+    private void installSet(EmojiSetListing listing) {
+        Bundle options = new Bundle();
+        options.putParcelable("listing", listing);
+        InstallEmojiFragment installFragment = (InstallEmojiFragment) Fragment.instantiate(SwitcherActivity.this, InstallEmojiFragment.class.getName(), options);
+        installFragment.show(getSupportFragmentManager(), "install");
     }
 
     private void refreshCurrentSystemEmojiSet() {

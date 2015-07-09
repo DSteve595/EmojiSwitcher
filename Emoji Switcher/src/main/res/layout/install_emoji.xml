@@ -23,13 +23,22 @@
         android:id="@+id/install_emoji_reboot_holder"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingStart="16dp">
+        android:orientation="vertical">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="2dp"
+            android:background="#4888" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="44dp"
             android:fontFamily="sans-serif-medium"
+            android:paddingEnd="16dp"
+            android:paddingStart="16dp"
             android:paddingTop="16dp"
             android:text="@string/reboot_question"
             android:textAllCaps="true"
@@ -38,6 +47,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:paddingEnd="16dp"
+            android:paddingStart="16dp"
             android:text="@string/reboot_explanation" />
 
         <LinearLayout

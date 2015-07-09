@@ -286,28 +286,6 @@ public class EmojiSwitcherUtils {
         return builder.create();
     }
 
-//    private static class InstallEmojiSetTask extends AsyncTask<Object, Void, Void> {
-//        @Override
-//        protected Void doInBackground(Object... params) {
-//            final Activity activity = (Activity) params[0];
-//            EmojiSet emojiSet = (EmojiSet) params[1];
-//
-//            File systemEmojiSetFile = new File(systemEmojiFilePath);
-//            File backupFile = new File(systemEmojiBackupFilePath(activity));
-//            if (backupFile.length() == 0) {
-//                RootTools.copyFile(systemEmojiSetFile.getAbsolutePath(),
-//                        backupFile.getAbsolutePath(), true, false);
-//            }
-//
-//            File emojiSetFile = emojiSet.path;
-//            RootTools.copyFile(emojiSetFile.getAbsolutePath(),
-//                    systemEmojiSetFile.getAbsolutePath(), true, false);
-//            applyPermissions(activity, "644", systemEmojiFilePath);
-//
-//            return null;
-//        }
-//    }
-
     public static Observable<EmojiSetListing> currentEmojiSet(final Context context, final List<EmojiSetListing> sets) {
         return Observable.create(new Observable.OnSubscribe<EmojiSetListing>() {
             @Override

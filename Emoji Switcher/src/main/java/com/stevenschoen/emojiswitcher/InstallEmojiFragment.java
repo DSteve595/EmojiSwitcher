@@ -107,7 +107,9 @@ public class InstallEmojiFragment extends RxDialogFragment {
         final AlertDialog dialog = new AlertDialog.Builder(getActivity())
                 .setView(view)
                 .setTitle(getString(R.string.installing_x_emoji, listing.name))
+                .setCancelable(false)
                 .create();
+        dialog.setCanceledOnTouchOutside(false);
 
         laterView.setOnClickListener(new View.OnClickListener() {
             @Override
