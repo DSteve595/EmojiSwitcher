@@ -83,11 +83,8 @@ public class EmojiSwitcherUtils {
                 try {
                     final EmojiSet emojiSet = new EmojiSet(listing, new File(filePath(context, listing)));
 
-                    final boolean hasHtcStage = isHtc();
-                    final boolean hasDownloadStage = !isDownloaded(emojiSet);
-
-                    if (isHtc()) {
-                        InstallProgress progress = new InstallProgress(hasHtcStage, hasDownloadStage);
+                    if (InstallProgress.hasHtcStage()) {
+                        InstallProgress progress = new InstallProgress();
                         progress.currentStage = InstallProgress.Stage.HtcFix;
                         progress.currentStageProgress = 0;
                         subscriber.onNext(progress);
@@ -97,7 +94,7 @@ public class EmojiSwitcherUtils {
                     }
 
                     final PublishSubject<Boolean> fileReadySubject = PublishSubject.create();
-                    fileReadySubject.subscribe(new Subscriber<Boolean>() {
+                    fileReadySubject.observeOn(Schedulers.io()).subscribe(new Subscriber<Boolean>() {
                         @Override
                         public void onCompleted() { }
 
@@ -109,36 +106,39 @@ public class EmojiSwitcherUtils {
                         @Override
                         public void onNext(Boolean ready) {
                             if (ready) {
-                                InstallProgress progress = new InstallProgress(hasHtcStage, hasDownloadStage);
-                                progress.currentStage = InstallProgress.Stage.Backup;
-                                subscriber.onNext(progress);
-                                File systemEmojiSetFile = new File(systemEmojiFilePath);
-                                File backupFile = new File(systemEmojiBackupFilePath(context));
-                                if (backupFile.length() == 0) {
+                                if (InstallProgress.hasBackupStage(context)) {
+                                    InstallProgress progress = new InstallProgress();
+                                    progress.currentStage = InstallProgress.Stage.Backup;
+                                    subscriber.onNext(progress);
+                                    File systemEmojiSetFile = new File(systemEmojiFilePath);
+                                    File backupFile = new File(systemEmojiBackupFilePath(context));
                                     RootTools.copyFile(systemEmojiSetFile.getAbsolutePath(),
                                             backupFile.getAbsolutePath(), true, false);
                                 }
 
-                                progress = new InstallProgress(hasHtcStage, hasDownloadStage);
+                                InstallProgress progress = new InstallProgress();
                                 progress.currentStage = InstallProgress.Stage.Install;
                                 subscriber.onNext(progress);
 
                                 RootTools.copyFile(emojiSet.path.getAbsolutePath(),
-                                        systemEmojiSetFile.getAbsolutePath(), true, false);
+                                        new File(systemEmojiFilePath).getAbsolutePath(), true, false);
                                 try {
                                     applyPermissions("644", systemEmojiFilePath);
                                 } catch (Exception e) {
                                     subscriber.onError(e);
                                 }
 
+                                progress = new InstallProgress();
+                                progress.currentStage = InstallProgress.Stage.Done;
+                                subscriber.onNext(progress);
                                 subscriber.onCompleted();
                                 unsubscribe();
                             }
                         }
                     });
 
-                    if (!isDownloaded(emojiSet)) {
-                        final InstallProgress progress = new InstallProgress(hasHtcStage, hasDownloadStage);
+                    if (InstallProgress.hasDownloadStage(emojiSet)) {
+                        final InstallProgress progress = new InstallProgress();
                         progress.currentStage = InstallProgress.Stage.Download;
                         subscriber.onNext(progress);
 
@@ -151,7 +151,7 @@ public class EmojiSwitcherUtils {
                         DownloadRequest request = new DownloadRequest(Uri.parse(listing.url));
                         request.setDestinationURI(Uri.parse(path));
                         final PublishSubject<Integer> downloadProgressSubject = PublishSubject.create();
-                        downloadProgressSubject.sample(250, TimeUnit.MILLISECONDS)
+                        downloadProgressSubject.throttleFirst(250, TimeUnit.MILLISECONDS)
                                 .subscribe(new Action1<Integer>() {
                                     @Override
                                     public void call(Integer percent) {
@@ -193,15 +193,53 @@ public class EmojiSwitcherUtils {
 
     public static class InstallProgress {
         public enum Stage {
-            HtcFix, Download, Backup, Install
+            HtcFix {
+                @Override
+                public String getTitle() {
+                    return "HTC override";
+                }
+            }, Download {
+                @Override
+                public String getTitle() {
+                    return "Download new emoji";
+                }
+            }, Backup {
+                @Override
+                public String getTitle() {
+                    return "Backup old emoji";
+                }
+            }, Install {
+                @Override
+                public String getTitle() {
+                    return "Install new emoji";
+                }
+            }, Done {
+                @Override
+                public String getTitle() {
+                    return "Done!";
+                }
+            };
+
+            public abstract String getTitle();
         }
 
-        public boolean hasHtcStage;
-        public boolean hasDownloadStage;
+        static boolean hasHtcStage() {
+            return isHtc();
+        }
 
-        public InstallProgress(boolean hasHtcStage, boolean hasDownloadStage) {
-            this.hasHtcStage = hasHtcStage;
-            this.hasDownloadStage = hasDownloadStage;
+        static boolean hasDownloadStage(EmojiSet emojiSet) {
+            try {
+                return !isDownloaded(emojiSet);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return true;
+        }
+
+        static boolean hasBackupStage(Context context) {
+            File backupFile = new File(systemEmojiBackupFilePath(context));
+            return (backupFile.length() == 0);
         }
 
         public Stage currentStage;
@@ -216,7 +254,7 @@ public class EmojiSwitcherUtils {
         return FilenameUtils.getName(url);
     }
 
-    private static String filePath(Context context, EmojiSetListing listing) {
+    public static String filePath(Context context, EmojiSetListing listing) {
         return context.getFilesDir() + File.separator + "emojisets" + File.separator + filenameFromUrl(listing.url);
     }
 

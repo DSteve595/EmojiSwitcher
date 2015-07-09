@@ -15,9 +15,11 @@
     <string name="switch_emojis_to">Switch emojis to…</string>
     <string name="set_emojis_to_">Set emojis to</string>
     <string name="about">Original fonts by gonsa from XDA. App by Steven Schoen.</string>
-    <string name="reboot">Reboot</string>
+    <string name="reboot_question">Reboot?</string>
     <string name="restore_default">Restore default</string>
     <string name="manage_downloads">Manage downloads</string>
     <string name="downloaded_emoji">Downloaded emoji</string>
+    <string name="installing_x_emoji">Installing %s emoji</string>
+    <string name="reboot_explanation">Most apps require a reboot for new emojis to be recognized.</string>
 
 </resources>

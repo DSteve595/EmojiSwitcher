@@ -17,7 +17,7 @@
     <style name="EmojiSwitcher.AlertDialog" parent="Theme.AppCompat.Light.Dialog.Alert">
         <item name="colorPrimary">@color/emojiswitcher_orange</item>
         <item name="colorPrimaryDark">@color/emojiswitcher_orange_dark</item>
-        <item name="colorAccent">@color/emojiswitcher_orange</item>
+        <item name="colorAccent">@color/emojiswitcher_orange_dark</item>
         <item name="colorButtonNormal">@color/emojiswitcher_orange_faded2</item>
     </style>
 

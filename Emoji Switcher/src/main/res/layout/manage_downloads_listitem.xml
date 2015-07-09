@@ -16,6 +16,7 @@
         tools:text="Emoji One" />
 
     <ImageButton
+        android:id="@+id/manage_downloads_listitem_delete"
         android:layout_width="48dp"
         android:layout_height="match_parent"
         android:layout_alignParentEnd="true"

@@ -4,20 +4,19 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.TextView;
-
-import com.stevenschoen.emojiswitcher.network.EmojiSetListing;
 
 import java.util.List;
 
 public class DownloadsAdapter extends RecyclerView.Adapter<DownloadsAdapter.DownloadHolder> {
 
-    private List<EmojiSetListing> listings;
+    private List<EmojiSet> sets;
 
     private Callbacks callbacks;
 
-    public DownloadsAdapter(List<EmojiSetListing> listings) {
-        this.listings = listings;
+    public DownloadsAdapter(List<EmojiSet> sets) {
+        this.sets = sets;
     }
 
     @Override
@@ -28,26 +27,26 @@ public class DownloadsAdapter extends RecyclerView.Adapter<DownloadsAdapter.Down
 
     @Override
     public void onBindViewHolder(DownloadHolder holder, final int position) {
-        EmojiSetListing listing = getListing(position);
+        final EmojiSet set = getSet(position);
 
-        holder.root.setOnClickListener(new View.OnClickListener() {
+        holder.name.setText(set.name);
+        holder.delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (callbacks != null) {
-                    callbacks.onClick(position);
+                    callbacks.onClickDelete(set);
                 }
             }
         });
-        holder.name.setText(listing.name);
     }
 
     @Override
     public int getItemCount() {
-        return listings.size();
+        return sets.size();
     }
 
-    public EmojiSetListing getListing(int position) {
-        return listings.get(position);
+    public EmojiSet getSet(int position) {
+        return sets.get(position);
     }
 
     public void setCallbacks(Callbacks callbacks) {
@@ -57,15 +56,17 @@ public class DownloadsAdapter extends RecyclerView.Adapter<DownloadsAdapter.Down
     public static class DownloadHolder extends RecyclerView.ViewHolder {
         public View root;
         public TextView name;
+        public ImageButton delete;
 
         public DownloadHolder(View itemView) {
             super(itemView);
             root = itemView;
             name = (TextView) itemView.findViewById(R.id.manage_downloads_listitem_name);
+            delete = (ImageButton) itemView.findViewById(R.id.manage_downloads_listitem_delete);
         }
     }
 
     public interface Callbacks {
-        void onClick(int position);
+        void onClickDelete(EmojiSet set);
     }
 }

@@ -28,13 +28,12 @@ import com.stevenschoen.emojiswitcher.network.EmojiSetsResponse;
 import java.util.ArrayList;
 import java.util.List;
 
-import rx.Observer;
 import rx.android.lifecycle.LifecycleObservable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.subjects.BehaviorSubject;
 
-public class SwitcherActivity extends RxAppCompatActivity {
+public class SwitcherActivity extends RxAppCompatActivity implements InstallEmojiFragment.Callbacks {
 
     private TextView textCurrentEmojiSet;
     private ImageButton buttonRefreshEmojiState;
@@ -43,8 +42,6 @@ public class SwitcherActivity extends RxAppCompatActivity {
 
     private BehaviorSubject<EmojiSetsResponse> emojiSetsResponseObservable = BehaviorSubject.create();
     private ArrayList<EmojiSetListing> emojiSetListings = new ArrayList<>();
-
-    private EmojiSwitcherUtils emojiSwitcherUtils;
 
     private IabHelper billingHelper;
     private boolean purchasedRemoveAds;
@@ -63,7 +60,6 @@ public class SwitcherActivity extends RxAppCompatActivity {
     }
 
     private void init() {
-        emojiSwitcherUtils = new EmojiSwitcherUtils();
         LifecycleObservable.bindActivityLifecycle(lifecycle(),
                 EmojiSwitcherUtils.getNetworkInterface(this).getEmojiSets())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -129,28 +125,10 @@ public class SwitcherActivity extends RxAppCompatActivity {
             public void onClick(View v) {
                 EmojiSetListing listing = (EmojiSetListing) spinnerInstallEmojis.getSelectedItem();
                 if (SetListingUtils.userOwnsSet(listing, billingHelper)) {
-                    LifecycleObservable.bindActivityLifecycle(lifecycle(),
-                            emojiSwitcherUtils.installEmojiSet(SwitcherActivity.this, (EmojiSetListing) spinnerInstallEmojis.getSelectedItem()))
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe(new Observer<EmojiSwitcherUtils.InstallProgress>() {
-                                @Override
-                                public void onCompleted() {
-                                    Log.d("asdf", "onCompleted");
-                                    refreshCurrentSystemEmojiSet();
-                                    EmojiSwitcherUtils.makeRebootDialog(SwitcherActivity.this).show();
-                                }
-
-                                @Override
-                                public void onError(Throwable e) {
-                                    e.printStackTrace();
-                                    refreshCurrentSystemEmojiSet();
-                                }
-
-                                @Override
-                                public void onNext(EmojiSwitcherUtils.InstallProgress installProgress) {
-                                    Log.d("asdf", "onNext, stage: " + installProgress.currentStage + ", progress: " + installProgress.currentStageProgress);
-                                }
-                            });
+                    Bundle options = new Bundle();
+                    options.putParcelable("listing", (EmojiSetListing) spinnerInstallEmojis.getSelectedItem());
+                    InstallEmojiFragment installFragment = (InstallEmojiFragment) Fragment.instantiate(SwitcherActivity.this, InstallEmojiFragment.class.getName(), options);
+                    installFragment.show(getSupportFragmentManager(), "install");
                 } else {
 //                    buy
                 }
@@ -332,5 +310,10 @@ public class SwitcherActivity extends RxAppCompatActivity {
         billingHelper = null;
 
         if (adView != null) adView.destroy();
+    }
+
+    @Override
+    public void refreshSystemEmoji() {
+        refreshCurrentSystemEmojiSet();
     }
 }
