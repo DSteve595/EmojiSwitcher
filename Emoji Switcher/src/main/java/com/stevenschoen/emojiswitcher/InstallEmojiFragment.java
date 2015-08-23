@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.stericson.RootTools.RootTools;
 import com.stevenschoen.emojiswitcher.network.EmojiSetListing;
@@ -28,6 +29,7 @@ import rx.Observer;
 import rx.android.app.support.RxDialogFragment;
 import rx.android.lifecycle.LifecycleObservable;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 public class InstallEmojiFragment extends RxDialogFragment {
@@ -47,7 +49,6 @@ public class InstallEmojiFragment extends RxDialogFragment {
         listing = getArguments().getParcelable("listing");
 
         installProgress = emojiSwitcherUtils.installEmojiSet(getActivity(), listing);
-        installProgress.subscribe();
     }
 
     @NonNull
@@ -93,6 +94,7 @@ public class InstallEmojiFragment extends RxDialogFragment {
                     @Override
                     public void onError(Throwable e) {
                         e.printStackTrace();
+                        Toast.makeText(getActivity(), e.getMessage(), Toast.LENGTH_LONG).show();
                         if (callbacks != null) {
                             callbacks.refreshSystemEmoji();
                         }
