@@ -11,6 +11,7 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 import com.stevenschoen.emojiswitcher.network.EmojiSetListing;
 import com.stevenschoen.emojiswitcher.network.EmojiSetsResponse;
+import com.trello.rxlifecycle.components.support.RxDialogFragment;
 import com.yqritc.recyclerviewflexibledivider.HorizontalDividerItemDecoration;
 
 import org.solovyev.android.views.llm.LinearLayoutManager;
@@ -22,8 +23,6 @@ import java.util.List;
 
 import rx.Observable;
 import rx.Subscriber;
-import rx.android.app.support.RxDialogFragment;
-import rx.android.lifecycle.LifecycleObservable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.subjects.BehaviorSubject;
@@ -37,9 +36,9 @@ public class ManageDownloadsFragment extends RxDialogFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        LifecycleObservable.bindFragmentLifecycle(lifecycle(),
-                EmojiSwitcherUtils.getNetworkInterface(getActivity()).getEmojiSets())
+        EmojiSwitcherUtils.getNetworkInterface(getActivity()).getEmojiSets()
                 .observeOn(AndroidSchedulers.mainThread())
+                .compose(this.<EmojiSetsResponse>bindToLifecycle())
                 .subscribe(new Action1<EmojiSetsResponse>() {
                     @Override
                     public void call(final EmojiSetsResponse emojiSetsResponse) {
@@ -100,9 +99,9 @@ public class ManageDownloadsFragment extends RxDialogFragment {
         });
         downloadsView.setAdapter(downloadsAdapter);
 
-        LifecycleObservable.bindFragmentLifecycle(lifecycle(),
-                downloadedEmojiSetsSubject)
+        downloadedEmojiSetsSubject
                 .observeOn(AndroidSchedulers.mainThread())
+                .compose(this.<Void>bindToLifecycle())
                 .subscribe(new Action1<Void>() {
                     @Override
                     public void call(Void nothing) {

@@ -16,6 +16,7 @@ import android.widget.Toast;
 
 import com.stericson.RootTools.RootTools;
 import com.stevenschoen.emojiswitcher.network.EmojiSetListing;
+import com.trello.rxlifecycle.components.support.RxDialogFragment;
 
 import org.solovyev.android.views.llm.LinearLayoutManager;
 
@@ -26,10 +27,7 @@ import java.util.List;
 
 import rx.Observable;
 import rx.Observer;
-import rx.android.app.support.RxDialogFragment;
-import rx.android.lifecycle.LifecycleObservable;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 public class InstallEmojiFragment extends RxDialogFragment {
@@ -78,10 +76,10 @@ public class InstallEmojiFragment extends RxDialogFragment {
 
         Button laterView = (Button) rebootHolder.findViewById(R.id.install_emoji_reboot_later);
 
-        LifecycleObservable.bindFragmentLifecycle(lifecycle(),
-                installProgress)
+        installProgress
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
+                .compose(this.<EmojiSwitcherUtils.InstallProgress>bindToLifecycle())
                 .subscribe(new Observer<EmojiSwitcherUtils.InstallProgress>() {
                     @Override
                     public void onCompleted() {

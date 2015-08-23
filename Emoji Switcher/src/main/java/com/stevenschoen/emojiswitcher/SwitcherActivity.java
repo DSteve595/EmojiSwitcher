@@ -27,11 +27,11 @@ import com.stevenschoen.emojiswitcher.billing.Inventory;
 import com.stevenschoen.emojiswitcher.billing.Purchase;
 import com.stevenschoen.emojiswitcher.network.EmojiSetListing;
 import com.stevenschoen.emojiswitcher.network.EmojiSetsResponse;
+import com.trello.rxlifecycle.components.support.RxAppCompatActivity;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import rx.android.lifecycle.LifecycleObservable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.subjects.BehaviorSubject;
@@ -71,9 +71,9 @@ public class SwitcherActivity extends RxAppCompatActivity implements InstallEmoj
     }
 
     private void init() {
-        LifecycleObservable.bindActivityLifecycle(lifecycle(),
-                EmojiSwitcherUtils.getNetworkInterface(this).getEmojiSets())
+        EmojiSwitcherUtils.getNetworkInterface(this).getEmojiSets()
                 .observeOn(AndroidSchedulers.mainThread())
+                .compose(this.<EmojiSetsResponse>bindToLifecycle())
                 .subscribe(new Action1<EmojiSetsResponse>() {
                     @Override
                     public void call(EmojiSetsResponse emojiSetsResponse) {
@@ -175,8 +175,8 @@ public class SwitcherActivity extends RxAppCompatActivity implements InstallEmoj
 
         buttonRefreshEmojiState.setEnabled(false);
 
-        LifecycleObservable.bindActivityLifecycle(lifecycle(),
-                emojiSetsResponseObservable)
+        emojiSetsResponseObservable
+                .compose(this.<EmojiSetsResponse>bindToLifecycle())
                 .subscribe(new Action1<EmojiSetsResponse>() {
                     @Override
                     public void call(EmojiSetsResponse emojiSetsResponse) {
