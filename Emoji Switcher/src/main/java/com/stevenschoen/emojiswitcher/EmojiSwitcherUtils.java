@@ -251,7 +251,13 @@ public class EmojiSwitcherUtils {
     }
 
     private static String filenameFromUrl(String url) {
-        return FilenameUtils.getName(url);
+        String filename = FilenameUtils.getName(url);
+        int indexOfParam = filename.indexOf('?');
+        if (indexOfParam != -1) {
+            return filename.substring(0, indexOfParam);
+        } else {
+            return filename;
+        }
     }
 
     public static String filePath(Context context, EmojiSetListing listing) {
