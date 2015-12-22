@@ -138,7 +138,7 @@ public class EmojiSwitcherUtils {
                     });
 
                     if (InstallProgress.hasDownloadStage(emojiSet)) {
-                        final InstallProgress progress = new InstallProgress();
+                        InstallProgress progress = new InstallProgress();
                         progress.currentStage = InstallProgress.Stage.Download;
                         subscriber.onNext(progress);
 
@@ -155,6 +155,8 @@ public class EmojiSwitcherUtils {
                                 .subscribe(new Action1<Integer>() {
                                     @Override
                                     public void call(Integer percent) {
+                                        InstallProgress progress = new InstallProgress();
+                                        progress.currentStage = InstallProgress.Stage.Download;
                                         progress.currentStageProgress = percent;
                                         subscriber.onNext(progress);
                                     }
@@ -198,29 +200,50 @@ public class EmojiSwitcherUtils {
                 public String getTitle() {
                     return "HTC override";
                 }
+                @Override
+                public boolean hasPercentProgress() {
+                    return false;
+                }
             }, Download {
                 @Override
                 public String getTitle() {
                     return "Download new emoji";
+                }
+                @Override
+                public boolean hasPercentProgress() {
+                    return true;
                 }
             }, Backup {
                 @Override
                 public String getTitle() {
                     return "Backup old emoji";
                 }
+                @Override
+                public boolean hasPercentProgress() {
+                    return false;
+                }
             }, Install {
                 @Override
                 public String getTitle() {
                     return "Install new emoji";
+                }
+                @Override
+                public boolean hasPercentProgress() {
+                    return false;
                 }
             }, Done {
                 @Override
                 public String getTitle() {
                     return "Done!";
                 }
+                @Override
+                public boolean hasPercentProgress() {
+                    return false;
+                }
             };
 
             public abstract String getTitle();
+            public abstract boolean hasPercentProgress();
         }
 
         static boolean hasHtcStage() {

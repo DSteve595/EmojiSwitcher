@@ -11,7 +11,7 @@
         android:layout_marginStart="16dp"
         android:gravity="center_vertical"
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
-        tools:text="Stage name" />
+        tools:text="Stage name"/>
 
     <ProgressBar
         android:id="@+id/install_emoji_stages_listitem_loading"
@@ -19,6 +19,15 @@
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
-        android:indeterminate="true" />
+        android:indeterminate="true"/>
 
+    <TextView
+        android:id="@+id/install_emoji_stages_listitem_percent"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="16dp"
+        android:gravity="center_vertical"
+        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+        tools:text="85%"/>
 </RelativeLayout>

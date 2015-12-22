@@ -1,10 +1,14 @@
 package com.stevenschoen.emojiswitcher;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.ConnectivityManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -21,6 +25,7 @@ import android.widget.Toast;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
+import com.stevenschoen.emojiswitcher.billing.IabException;
 import com.stevenschoen.emojiswitcher.billing.IabHelper;
 import com.stevenschoen.emojiswitcher.billing.IabResult;
 import com.stevenschoen.emojiswitcher.billing.Inventory;
@@ -30,10 +35,15 @@ import com.stevenschoen.emojiswitcher.network.EmojiSetsResponse;
 import com.trello.rxlifecycle.components.support.RxAppCompatActivity;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.Callable;
 
+import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
+import rx.functions.Func2;
 import rx.subjects.BehaviorSubject;
 
 public class SwitcherActivity extends RxAppCompatActivity implements InstallEmojiFragment.Callbacks {
@@ -75,27 +85,27 @@ public class SwitcherActivity extends RxAppCompatActivity implements InstallEmoj
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(this.<EmojiSetsResponse>bindToLifecycle())
                 .subscribe(new Action1<EmojiSetsResponse>() {
-                    @Override
-                    public void call(EmojiSetsResponse emojiSetsResponse) {
-                        emojiSetListings.clear();
-                        emojiSetListings.addAll(emojiSetsResponse.emojiSets);
-                        emojiSetsAdapter.notifyDataSetChanged();
-                        if (spinnerInstallEmojis.getSelectedItemPosition() == AdapterView.INVALID_POSITION) {
-                            for (int i = 0; i < emojiSetListings.size(); i++) {
-                                if (emojiSetListings.get(i).selectByDefault) {
-                                    spinnerInstallEmojis.setSelection(i);
-                                    break;
-                                }
-                            }
-                        }
-                        emojiSetsResponseObservable.onNext(emojiSetsResponse);
-                    }
-                }, new Action1<Throwable>() {
-                    @Override
-                    public void call(Throwable throwable) {
-                        throwable.printStackTrace();
-                    }
-                });
+					@Override
+					public void call(EmojiSetsResponse emojiSetsResponse) {
+						emojiSetListings.clear();
+						emojiSetListings.addAll(emojiSetsResponse.emojiSets);
+						emojiSetsAdapter.notifyDataSetChanged();
+						if (spinnerInstallEmojis.getSelectedItemPosition() == AdapterView.INVALID_POSITION) {
+							for (int i = 0; i < emojiSetListings.size(); i++) {
+								if (emojiSetListings.get(i).selectByDefault) {
+									spinnerInstallEmojis.setSelection(i);
+									break;
+								}
+							}
+						}
+						emojiSetsResponseObservable.onNext(emojiSetsResponse);
+					}
+				}, new Action1<Throwable>() {
+					@Override
+					public void call(Throwable throwable) {
+						throwable.printStackTrace();
+					}
+				});
 
         textCurrentEmojiSet = (TextView) findViewById(R.id.text_currentemojisetdetected_is);
 
@@ -163,7 +173,7 @@ public class SwitcherActivity extends RxAppCompatActivity implements InstallEmoj
         setupBilling();
     }
 
-    private void installSet(EmojiSetListing listing) {
+	private void installSet(EmojiSetListing listing) {
         Bundle options = new Bundle();
         options.putParcelable("listing", listing);
         InstallEmojiFragment installFragment = (InstallEmojiFragment) Fragment.instantiate(SwitcherActivity.this, InstallEmojiFragment.class.getName(), options);
@@ -178,35 +188,35 @@ public class SwitcherActivity extends RxAppCompatActivity implements InstallEmoj
         emojiSetsResponseObservable
                 .compose(this.<EmojiSetsResponse>bindToLifecycle())
                 .subscribe(new Action1<EmojiSetsResponse>() {
-                    @Override
-                    public void call(EmojiSetsResponse emojiSetsResponse) {
-                        EmojiSwitcherUtils.currentEmojiSet(SwitcherActivity.this, emojiSetListings)
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(new Action1<EmojiSetListing>() {
-                                    @Override
-                                    public void call(EmojiSetListing emojiSetListing) {
-                                        if (emojiSetListing != null) {
-                                            textCurrentEmojiSet.setTextColor(getResources().getColor(R.color.current_emojis_good));
-                                            textCurrentEmojiSet.setText(emojiSetListing.name);
-                                        } else {
-                                            textCurrentEmojiSet.setTextColor(getResources().getColor(R.color.current_emojis_bad));
-                                            textCurrentEmojiSet.setText(R.string.unknown);
-                                        }
-                                        buttonRefreshEmojiState.setEnabled(true);
-                                    }
-                                }, new Action1<Throwable>() {
-                                    @Override
-                                    public void call(Throwable throwable) {
-                                        throwable.printStackTrace();
-                                    }
-                                });
-                    }
-                }, new Action1<Throwable>() {
-                    @Override
-                    public void call(Throwable throwable) {
-                        throwable.printStackTrace();
-                    }
-                });
+					@Override
+					public void call(EmojiSetsResponse emojiSetsResponse) {
+						EmojiSwitcherUtils.currentEmojiSet(SwitcherActivity.this, emojiSetListings)
+								.observeOn(AndroidSchedulers.mainThread())
+								.subscribe(new Action1<EmojiSetListing>() {
+									@Override
+									public void call(EmojiSetListing emojiSetListing) {
+										if (emojiSetListing != null) {
+											textCurrentEmojiSet.setTextColor(getResources().getColor(R.color.current_emojis_good));
+											textCurrentEmojiSet.setText(emojiSetListing.name);
+										} else {
+											textCurrentEmojiSet.setTextColor(getResources().getColor(R.color.current_emojis_bad));
+											textCurrentEmojiSet.setText(R.string.unknown);
+										}
+										buttonRefreshEmojiState.setEnabled(true);
+									}
+								}, new Action1<Throwable>() {
+									@Override
+									public void call(Throwable throwable) {
+										throwable.printStackTrace();
+									}
+								});
+					}
+				}, new Action1<Throwable>() {
+					@Override
+					public void call(Throwable throwable) {
+						throwable.printStackTrace();
+					}
+				});
     }
 
     private void verifyRoot() {
@@ -224,6 +234,7 @@ public class SwitcherActivity extends RxAppCompatActivity implements InstallEmoj
             public void onIabSetupFinished(IabResult result) {
                 if (result.isSuccess()) {
                     checkAds();
+					notifyEmojiOnePurchasers();
                 } else {
                     Log.d("asdf", "Problem setting up in-app billing: " + result);
                 }
@@ -235,49 +246,105 @@ public class SwitcherActivity extends RxAppCompatActivity implements InstallEmoj
         List<String> additionalSkuList = new ArrayList<>();
         additionalSkuList.add(EmojiSwitcherUtils.SKU_REMOVEADS);
         billingHelper.queryInventoryAsync(true, additionalSkuList,
-                new IabHelper.QueryInventoryFinishedListener() {
-                    @Override
-                    public void onQueryInventoryFinished(IabResult result, Inventory inv) {
-                        if (result.isSuccess()) {
-                            purchasedRemoveAds = inv.hasPurchase(EmojiSwitcherUtils.SKU_REMOVEADS);
-                            final View removeAdsButton = findViewById(R.id.button_removeads);
-                            if (!purchasedRemoveAds && !BuildConfig.DEBUG) {
-                                AdRequest adRequest = new AdRequest.Builder().build();
+				new IabHelper.QueryInventoryFinishedListener() {
+					@Override
+					public void onQueryInventoryFinished(IabResult result, Inventory inv) {
+						if (result.isSuccess()) {
+							purchasedRemoveAds = inv.hasPurchase(EmojiSwitcherUtils.SKU_REMOVEADS);
+							final View removeAdsButton = findViewById(R.id.button_removeads);
+							if (!purchasedRemoveAds && !BuildConfig.DEBUG) {
+								AdRequest adRequest = new AdRequest.Builder().build();
 
-                                adView = new AdView(SwitcherActivity.this);
-                                adView.setAdSize(AdSize.SMART_BANNER);
-                                adView.setAdUnitId(EmojiSwitcherUtils.GOOGLE_ADS_UNITID);
-                                FrameLayout adHolder = (FrameLayout) findViewById(R.id.holder_ad);
-                                adHolder.addView(adView);
-                                adView.loadAd(adRequest);
+								adView = new AdView(SwitcherActivity.this);
+								adView.setAdSize(AdSize.SMART_BANNER);
+								adView.setAdUnitId(EmojiSwitcherUtils.GOOGLE_ADS_UNITID);
+								FrameLayout adHolder = (FrameLayout) findViewById(R.id.holder_ad);
+								adHolder.addView(adView);
+								adView.loadAd(adRequest);
 
-                                removeAdsButton.setOnClickListener(new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        billingHelper.launchPurchaseFlow(SwitcherActivity.this,
-                                                EmojiSwitcherUtils.SKU_REMOVEADS, 0, new IabHelper.OnIabPurchaseFinishedListener() {
-                                                    @Override
-                                                    public void onIabPurchaseFinished(IabResult result, Purchase info) {
-                                                        checkAds();
-                                                    }
-                                                });
-                                    }
-                                });
-                                removeAdsButton.setAlpha(0);
-                                removeAdsButton.setVisibility(View.VISIBLE);
-                                removeAdsButton.animate().alpha(0.75f);
-                            } else {
-                                removeAdsButton.animate().alpha(0).withEndAction(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        removeAdsButton.setVisibility(View.GONE);
-                                    }
-                                });
-                            }
-                        }
-                    }
-                });
+								removeAdsButton.setOnClickListener(new View.OnClickListener() {
+									@Override
+									public void onClick(View v) {
+										billingHelper.launchPurchaseFlow(SwitcherActivity.this,
+												EmojiSwitcherUtils.SKU_REMOVEADS, 0, new IabHelper.OnIabPurchaseFinishedListener() {
+													@Override
+													public void onIabPurchaseFinished(IabResult result, Purchase info) {
+														checkAds();
+													}
+												});
+									}
+								});
+								removeAdsButton.setAlpha(0);
+								removeAdsButton.setVisibility(View.VISIBLE);
+								removeAdsButton.animate().alpha(0.75f);
+							} else {
+								removeAdsButton.animate().alpha(0).withEndAction(new Runnable() {
+									@Override
+									public void run() {
+										removeAdsButton.setVisibility(View.GONE);
+									}
+								});
+							}
+						}
+					}
+				});
     }
+
+	private void notifyEmojiOnePurchasers() {
+		Observable.combineLatest(
+				Observable.fromCallable(new Callable<Boolean>() {
+					@Override
+					public Boolean call() throws Exception {
+						return PreferenceManager.getDefaultSharedPreferences(SwitcherActivity.this).getBoolean("notifiedEmojiOne", false);
+					}
+				}),
+				emojiSetsResponseObservable,
+				new Func2<Boolean, EmojiSetsResponse, Boolean>() {
+					@Override
+					public Boolean call(Boolean alreadyNotified, EmojiSetsResponse emojiSetsResponse) {
+						if (alreadyNotified) return false;
+						for (EmojiSetListing listing : emojiSetsResponse.emojiSets) {
+							if (Objects.equals(listing.googlePlaySku, "emojiswitcher_set_emojione")) {
+								try {
+									return billingHelper.queryInventory(true, Collections.singletonList(listing.googlePlaySku), null)
+											.hasPurchase(listing.googlePlaySku);
+								} catch (IabException e) {
+									e.printStackTrace();
+									return false;
+								}
+							}
+						}
+						return false;
+					}
+				}).observeOn(AndroidSchedulers.mainThread())
+				.subscribe(new Action1<Boolean>() {
+					@Override
+					public void call(Boolean notify) {
+						if (notify) {
+							new AlertDialog.Builder(SwitcherActivity.this)
+									.setMessage("Emoji One is now available to everyone for free! You're entitled to a full refund for purchasing it.")
+									.setPositiveButton("Request refund", new DialogInterface.OnClickListener() {
+										@Override
+										public void onClick(DialogInterface dialog, int which) {
+											Intent sendEmailIntent = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:steven@stevenschoen.com"));
+											sendEmailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{"steven@stevenschoen.com"});
+											sendEmailIntent.putExtra(Intent.EXTRA_SUBJECT, "Emoji One refund request");
+											sendEmailIntent.putExtra(Intent.EXTRA_TEXT, "My Google Play email is: \n(Enter your Google Play email above.)");
+											startActivity(Intent.createChooser(sendEmailIntent, "Request refund by email"));
+										}
+									})
+									.setNegativeButton("Cancel", null)
+									.show();
+							PreferenceManager.getDefaultSharedPreferences(SwitcherActivity.this).edit().putBoolean("notifiedEmojiOne", true).apply();
+						}
+					}
+				}, new Action1<Throwable>() {
+					@Override
+					public void call(Throwable throwable) {
+						throwable.printStackTrace();
+					}
+				});
+	}
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {

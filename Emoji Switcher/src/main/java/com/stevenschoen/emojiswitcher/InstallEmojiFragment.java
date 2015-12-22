@@ -156,6 +156,7 @@ public class InstallEmojiFragment extends RxDialogFragment {
             if (!hasHtcStage) stages.remove(EmojiSwitcherUtils.InstallProgress.Stage.HtcFix);
             if (!hasDownloadStage) stages.remove(EmojiSwitcherUtils.InstallProgress.Stage.Download);
             if (!hasBackupStage) stages.remove(EmojiSwitcherUtils.InstallProgress.Stage.Backup);
+			setHasStableIds(true);
         }
 
         public void updateProgress(EmojiSwitcherUtils.InstallProgress installProgress) {
@@ -164,7 +165,7 @@ public class InstallEmojiFragment extends RxDialogFragment {
             if (oldProgress == null ||
                     oldProgress.currentStage != installProgress.currentStage ||
                     oldProgress.currentStageProgress != installProgress.currentStageProgress) {
-                notifyDataSetChanged();
+				notifyDataSetChanged();
             }
         }
 
@@ -176,25 +177,36 @@ public class InstallEmojiFragment extends RxDialogFragment {
 
         @Override
         public void onBindViewHolder(StageHolder holder, int position) {
-            holder.title.setText((position + 1) + ". " + stages.get(position).getTitle());
-            if (position == getStagePosition(installProgress.currentStage)) {
+			EmojiSwitcherUtils.InstallProgress.Stage stage = stages.get(position);
+
+            holder.title.setText(String.format("%d. %s", (position + 1), stage.getTitle()));
+            if (stage == installProgress.currentStage) {
                 holder.title.setEnabled(true);
-                if (installProgress.currentStage == EmojiSwitcherUtils.InstallProgress.Stage.Done) {
+                if (stage == EmojiSwitcherUtils.InstallProgress.Stage.Done) {
                     holder.loading.setVisibility(View.INVISIBLE);
                 } else {
-                    holder.loading.setVisibility(View.VISIBLE);
+					if (installProgress.currentStage.hasPercentProgress()) {
+						holder.loading.setVisibility(View.GONE);
+						holder.percent.setVisibility(View.VISIBLE);
+						holder.percent.setText(String.format("%d%%", installProgress.currentStageProgress));
+					} else {
+						holder.percent.setVisibility(View.INVISIBLE);
+						holder.loading.setVisibility(View.VISIBLE);
+					}
                 }
             } else {
                 holder.title.setEnabled(false);
                 holder.loading.setVisibility(View.INVISIBLE);
+				holder.percent.setVisibility(View.INVISIBLE);
             }
         }
 
-        private int getStagePosition(EmojiSwitcherUtils.InstallProgress.Stage stage) {
-            return stages.indexOf(stage);
-        }
+		@Override
+		public long getItemId(int position) {
+			return stages.get(position).ordinal();
+		}
 
-        @Override
+		@Override
         public int getItemCount() {
             if (installProgress == null) {
                 return 0;
@@ -207,12 +219,14 @@ public class InstallEmojiFragment extends RxDialogFragment {
             private View root;
             private TextView title;
             private ProgressBar loading;
+            private TextView percent;
 
             public StageHolder(View itemView) {
                 super(itemView);
                 root = itemView;
                 title = (TextView) itemView.findViewById(R.id.install_emoji_stages_listitem_title);
                 loading = (ProgressBar) itemView.findViewById(R.id.install_emoji_stages_listitem_loading);
+                percent = (TextView) itemView.findViewById(R.id.install_emoji_stages_listitem_percent);
             }
         }
     }

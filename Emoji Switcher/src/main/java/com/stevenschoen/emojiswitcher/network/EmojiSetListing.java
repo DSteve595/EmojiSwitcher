@@ -13,6 +13,7 @@ public class EmojiSetListing implements Parcelable {
     public String googlePlaySku;
     @SerializedName("default")
     public boolean selectByDefault;
+    public boolean free;
 
     @Override
     public String toString() {
@@ -31,6 +32,7 @@ public class EmojiSetListing implements Parcelable {
         dest.writeString(this.md5);
         dest.writeString(this.googlePlaySku);
         dest.writeByte(selectByDefault ? (byte) 1 : (byte) 0);
+        dest.writeByte(free ? (byte) 1 : (byte) 0);
     }
 
     public EmojiSetListing() { }
@@ -41,6 +43,7 @@ public class EmojiSetListing implements Parcelable {
         this.md5 = in.readString();
         this.googlePlaySku = in.readString();
         this.selectByDefault = in.readByte() != 0;
+        this.free = in.readByte() != 0;
     }
 
     public static final Parcelable.Creator<EmojiSetListing> CREATOR = new Parcelable.Creator<EmojiSetListing>() {
