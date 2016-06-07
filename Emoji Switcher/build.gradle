@@ -5,10 +5,11 @@ android {
     buildToolsVersion '23.0.3'
 
     defaultConfig {
+        applicationId 'com.stevenschoen.emojiswitcher'
         minSdkVersion 19
         targetSdkVersion 23
-        versionCode 16
-        versionName "2.0.2"
+        versionCode 19
+        versionName "2.1"
     }
 
     compileOptions {

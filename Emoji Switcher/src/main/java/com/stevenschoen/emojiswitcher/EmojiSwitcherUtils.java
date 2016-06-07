@@ -46,9 +46,22 @@ public class EmojiSwitcherUtils {
 	public static final String SKU_REMOVEADS = "emojiswitcher_removeads";
 
     private static final String systemFontsPath = "/system/fonts/";
-    private static final String systemEmojiFilePath = systemFontsPath + "NotoColorEmoji.ttf";
+	private static String systemFontFilePath;
     private static final String htcFilePath = systemFontsPath + "AndroidEmoji-htc.ttf";
     private static final String htcBackupFilePath = htcFilePath + ".bak";
+
+    public static String getSystemFontFilePath() {
+		if (systemFontFilePath == null) {
+			String path = systemFontsPath;
+			if (RootTools.exists(systemFontsPath + "SamsungColorEmoji.ttf")) {
+				systemFontFilePath = path + "SamsungColorEmoji.ttf";
+			} else {
+				systemFontFilePath = path + "NotoColorEmoji.ttf";
+			}
+		}
+
+		return systemFontFilePath;
+    }
 
     public static NetworkInterface getNetworkInterface(Context context) {
         return ((EmojiSwitcherApplication) context.getApplicationContext()).getNetworkInterface();
@@ -110,7 +123,7 @@ public class EmojiSwitcherUtils {
                                     InstallProgress progress = new InstallProgress();
                                     progress.currentStage = InstallProgress.Stage.Backup;
                                     subscriber.onNext(progress);
-                                    File systemEmojiSetFile = new File(systemEmojiFilePath);
+                                    File systemEmojiSetFile = new File(getSystemFontFilePath());
                                     File backupFile = new File(systemEmojiBackupFilePath(context));
                                     RootTools.copyFile(systemEmojiSetFile.getAbsolutePath(),
                                             backupFile.getAbsolutePath(), true, false);
@@ -121,9 +134,9 @@ public class EmojiSwitcherUtils {
                                 subscriber.onNext(progress);
 
                                 RootTools.copyFile(emojiSet.path.getAbsolutePath(),
-                                        new File(systemEmojiFilePath).getAbsolutePath(), true, false);
+                                        new File(getSystemFontFilePath()).getAbsolutePath(), true, false);
                                 try {
-                                    applyPermissions("644", systemEmojiFilePath);
+                                    applyPermissions("644", getSystemFontFilePath());
                                 } catch (Exception e) {
                                     subscriber.onError(e);
                                 }
@@ -320,7 +333,7 @@ public class EmojiSwitcherUtils {
             @Override
             public void call(Subscriber<? super EmojiSetListing> subscriber) {
                 File emojiSetDestinationFile = new File(context.getFilesDir() + File.separator + "systemcurrent.ttf");
-                RootTools.copyFile(systemEmojiFilePath, emojiSetDestinationFile.getAbsolutePath(), true, false);
+                RootTools.copyFile(getSystemFontFilePath(), emojiSetDestinationFile.getAbsolutePath(), true, false);
                 try {
                     applyPermissions("777", emojiSetDestinationFile.getAbsolutePath());
                 } catch (Exception e) {
@@ -358,9 +371,9 @@ public class EmojiSwitcherUtils {
                 undoHtcFix();
             }
 
-            RootTools.copyFile(systemEmojiBackupFilePath(activity[0]), systemEmojiFilePath, true, true);
+            RootTools.copyFile(systemEmojiBackupFilePath(activity[0]), getSystemFontFilePath(), true, true);
             try {
-                applyPermissions("644", systemEmojiFilePath);
+                applyPermissions("644", getSystemFontFilePath());
             } catch (TimeoutException | RootDeniedException | IOException e) {
                 e.printStackTrace();
             }

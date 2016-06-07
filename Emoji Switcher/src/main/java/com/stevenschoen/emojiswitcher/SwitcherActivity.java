@@ -1,14 +1,10 @@
 package com.stevenschoen.emojiswitcher;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.ConnectivityManager;
-import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
-import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -25,7 +21,6 @@ import android.widget.Toast;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
-import com.stevenschoen.emojiswitcher.billing.IabException;
 import com.stevenschoen.emojiswitcher.billing.IabHelper;
 import com.stevenschoen.emojiswitcher.billing.IabResult;
 import com.stevenschoen.emojiswitcher.billing.Inventory;
@@ -35,15 +30,10 @@ import com.stevenschoen.emojiswitcher.network.EmojiSetsResponse;
 import com.trello.rxlifecycle.components.support.RxAppCompatActivity;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.Callable;
 
-import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
-import rx.functions.Func2;
 import rx.subjects.BehaviorSubject;
 
 public class SwitcherActivity extends RxAppCompatActivity implements InstallEmojiFragment.Callbacks {
@@ -234,7 +224,6 @@ public class SwitcherActivity extends RxAppCompatActivity implements InstallEmoj
             public void onIabSetupFinished(IabResult result) {
                 if (result.isSuccess()) {
                     checkAds();
-					notifyEmojiOnePurchasers();
                 } else {
                     Log.d("asdf", "Problem setting up in-app billing: " + result);
                 }
@@ -289,62 +278,6 @@ public class SwitcherActivity extends RxAppCompatActivity implements InstallEmoj
 					}
 				});
     }
-
-	private void notifyEmojiOnePurchasers() {
-		Observable.combineLatest(
-				Observable.fromCallable(new Callable<Boolean>() {
-					@Override
-					public Boolean call() throws Exception {
-						return PreferenceManager.getDefaultSharedPreferences(SwitcherActivity.this).getBoolean("notifiedEmojiOne", false);
-					}
-				}),
-				emojiSetsResponseObservable,
-				new Func2<Boolean, EmojiSetsResponse, Boolean>() {
-					@Override
-					public Boolean call(Boolean alreadyNotified, EmojiSetsResponse emojiSetsResponse) {
-						if (alreadyNotified) return false;
-						for (EmojiSetListing listing : emojiSetsResponse.emojiSets) {
-							if (Objects.equals(listing.googlePlaySku, "emojiswitcher_set_emojione")) {
-								try {
-									return billingHelper.queryInventory(true, Collections.singletonList(listing.googlePlaySku), null)
-											.hasPurchase(listing.googlePlaySku);
-								} catch (IabException e) {
-									e.printStackTrace();
-									return false;
-								}
-							}
-						}
-						return false;
-					}
-				}).observeOn(AndroidSchedulers.mainThread())
-				.subscribe(new Action1<Boolean>() {
-					@Override
-					public void call(Boolean notify) {
-						if (notify) {
-							new AlertDialog.Builder(SwitcherActivity.this)
-									.setMessage("Emoji One is now available to everyone for free! You're entitled to a full refund for purchasing it.")
-									.setPositiveButton("Request refund", new DialogInterface.OnClickListener() {
-										@Override
-										public void onClick(DialogInterface dialog, int which) {
-											Intent sendEmailIntent = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:steven@stevenschoen.com"));
-											sendEmailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{"steven@stevenschoen.com"});
-											sendEmailIntent.putExtra(Intent.EXTRA_SUBJECT, "Emoji One refund request");
-											sendEmailIntent.putExtra(Intent.EXTRA_TEXT, "My Google Play email is: \n(Enter your Google Play email above.)");
-											startActivity(Intent.createChooser(sendEmailIntent, "Request refund by email"));
-										}
-									})
-									.setNegativeButton("Cancel", null)
-									.show();
-							PreferenceManager.getDefaultSharedPreferences(SwitcherActivity.this).edit().putBoolean("notifiedEmojiOne", true).apply();
-						}
-					}
-				}, new Action1<Throwable>() {
-					@Override
-					public void call(Throwable throwable) {
-						throwable.printStackTrace();
-					}
-				});
-	}
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
