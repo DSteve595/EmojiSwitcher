@@ -1,4 +1,3 @@
-
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
@@ -9,7 +8,7 @@
     <string name="refresh">Ricarica</string>
     <string name="try_again">Riprova</string>
     <string name="check_root">Controllo root</string>
-    <string name="root_problem">C'è stato un problema ottenere l'accesso come root.vv\n\nRoot access is given after you "root" your device, which lets apps do advanced things like modify system files.
+    <string name="root_problem">C\'è stato un problema ottenere l\'accesso come root.vv\n\nRoot access is given after you "root" your device, which lets apps do advanced things like modify system files.
 It\'s a different process for each device.\n\nDoes this app have root permissions?</string>
     <string name="are_you_rooted">Hai i permessi di root?</string>
     <string name="failed_to_get_root">Impossibile ottenere root!</string>

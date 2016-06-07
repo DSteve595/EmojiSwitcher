@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion '23.0.2'
+    buildToolsVersion '23.0.3'
 
     defaultConfig {
         minSdkVersion 19
@@ -18,16 +18,16 @@ android {
 }
 
 dependencies {
-    compile 'com.google.android.gms:play-services-ads:8.4.0'
-    compile 'commons-io:commons-io:2.4'
+    compile 'com.google.android.gms:play-services-ads:9.0.2'
+    compile 'commons-io:commons-io:2.5'
     compile 'com.google.guava:guava:19.0'
-    compile 'io.reactivex:rxandroid:1.1.0'
-    compile 'com.trello:rxlifecycle:0.4.0'
-    compile 'com.trello:rxlifecycle-components:0.4.0'
+    compile 'io.reactivex:rxandroid:1.2.0'
+    compile 'com.trello:rxlifecycle:0.6.1'
+    compile 'com.trello:rxlifecycle-components:0.6.1'
     compile files('libs/RootTools-4.2.jar')
-    compile 'com.android.support:appcompat-v7:23.1.1'
-    compile 'com.android.support:recyclerview-v7:23.1.1'
-    compile 'com.yqritc:recyclerview-flexibledivider:1.2.6'
+    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile 'com.android.support:recyclerview-v7:23.4.0'
+    compile 'com.yqritc:recyclerview-flexibledivider:1.2.9'
     compile 'org.solovyev.android.views:linear-layout-manager:0.5@aar'
     compile 'com.squareup.retrofit:retrofit:1.9.0'
     compile 'com.mani:thindownloadmanager:1.0.0'
