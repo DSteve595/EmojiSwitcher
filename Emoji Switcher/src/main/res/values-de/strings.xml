@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<string name="failed_to_get_root">Root konnte nicht erlangt werden!</string>
+	<string name="action_settings">Einstellungen</string>
+	<string name="check_root">Auf Root überprüfen?</string>
+	<string name="are_you_rooted">Ist das Gerät gerootet?</string>
+	<string name="reboot_question">Neustarten?</string>
+	<string name="refresh">Aktualisieren</string>
+	<string name="restore_default">Zurücksetzen</string>
+	<string name="set">Ändern</string>
+	<string name="set_emojis_to_">Emojis ändern zu</string>
+	<string name="try_again">Erneut versuchen</string>
+	<string name="unknown">Unbekannt</string>
+	<string name="switch_emojis_to">Emojis wechseln zu…</string>
+	<string name="reboot_explanation">Für die meisten Apps ist ein Neustart erforderlich, um die neuen Emojis zu erkennen.</string>
+	<string name="manage_downloads">Downloads verwalten</string>
+	<string name="installing_x_emoji">Emoji %s installieren</string>
+	<string name="downloaded_emoji">Heruntergeladene Emojis</string>
+	<string name="current_emojis_detected">Momentane Emojis erkannt:</string>
+	<string name="root_problem">Root-Zugriff konnte nicht erlangt werden.\n\nFür Root-Zugriff ist es notwendig, das Gerät zu "rooten", wodurch erweiterte Dinge wie das Bearbeiten von Systemdateien möglich ist.
+Dieser Prozess ist für jedes Gerät unterschiedlich.\n\nHat diese App Root-Berechtigungen?</string>
+	<string name="about">Originale Fonts von gonsa von XDA. App von Steven Schoen.</string>
+
+</resources>
