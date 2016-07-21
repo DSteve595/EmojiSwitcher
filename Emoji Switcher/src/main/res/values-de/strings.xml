@@ -18,7 +18,7 @@
 	<string name="installing_x_emoji">Emoji %s installieren</string>
 	<string name="downloaded_emoji">Heruntergeladene Emojis</string>
 	<string name="current_emojis_detected">Momentane Emojis erkannt:</string>
-	<string name="root_problem">Root-Zugriff konnte nicht erlangt werden.\n\nFür Root-Zugriff ist es notwendig, das Gerät zu "rooten", wodurch erweiterte Dinge wie das Bearbeiten von Systemdateien möglich ist.
+	<string name="root_problem">Root-Zugriff konnte nicht erlangt werden.\n\nFür Root-Zugriff ist es notwendig, das Gerät zu "rooten", wodurch erweiterte Dinge wie das Bearbeiten von Systemdateien möglich sind.
 Dieser Prozess ist für jedes Gerät unterschiedlich.\n\nHat diese App Root-Berechtigungen?</string>
 	<string name="about">Originale Fonts von gonsa von XDA. App von Steven Schoen.</string>
 
