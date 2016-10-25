@@ -14,7 +14,7 @@ It\'s a different process for each device.\n\nDoes this app have root permission
     <string name="failed_to_get_root">Impossibile ottenere root!</string>
     <string name="switch_emojis_to">Passa a emoji…</string>
     <string name="set_emojis_to_">Emoji impostate</string>
-    <string name="about">Font originali di gonsa da XDA. App di Steven Schoen.</string>
+    <string name="about">App di Steven Schoen.</string>
     <string name="reboot_question">Riavvio?</string>
     <string name="restore_default">Ripristina predefinito</string>
     <string name="manage_downloads">Gestione download</string>

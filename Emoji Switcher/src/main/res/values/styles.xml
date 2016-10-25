@@ -7,6 +7,7 @@
         <item name="colorButtonNormal">@color/emojiswitcher_orange_faded2</item>
 
         <item name="android:windowBackground">@drawable/gradient_orange</item>
+        <item name="android:windowLightStatusBar">true</item>
         <item name="autoScaleTextViewStyle">@style/EmojiSwitcher.AutoScaleTextView</item>
         <item name="actionBarStyle">@style/EmojiSwitcher.ActionBar</item>
         <item name="alertDialogTheme">@style/EmojiSwitcher.AlertDialog</item>

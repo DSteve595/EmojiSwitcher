@@ -127,6 +127,11 @@ public class EmojiSwitcherUtils {
                                     File backupFile = new File(systemEmojiBackupFilePath(context));
                                     RootTools.copyFile(systemEmojiSetFile.getAbsolutePath(),
                                             backupFile.getAbsolutePath(), true, false);
+                                    try {
+                                        fixSELinuxContextIfNeeded(backupFile.getAbsolutePath());
+                                    } catch (IOException | TimeoutException | RootDeniedException e) {
+                                        e.printStackTrace();
+                                    }
                                 }
 
                                 InstallProgress progress = new InstallProgress();
@@ -303,8 +308,21 @@ public class EmojiSwitcherUtils {
     public static void applyPermissions(String permissions, String path) throws TimeoutException, RootDeniedException, IOException {
         RootTools.remount(path, "RW");
         Shell shell = RootTools.getShell(true);
-        Command commandPermission = new Command(0, "chmod " + permissions + " " + path);
-        shell.add(commandPermission);
+        shell.add(new Command(0, "chmod " + permissions + " " + path));
+        shell.close();
+    }
+
+    public static void fixSELinuxContextIfNeeded(final String path) throws IOException, TimeoutException, RootDeniedException {
+        Shell shell = RootTools.getShell(true);
+        if (shell.isSELinuxEnforcing()) {
+            shell.add(new Command(0, "restorecon " + path));
+            // TODO Why doesn't sleep work in shell?
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         shell.close();
     }
 
@@ -336,6 +354,7 @@ public class EmojiSwitcherUtils {
                 RootTools.copyFile(getSystemFontFilePath(), emojiSetDestinationFile.getAbsolutePath(), true, false);
                 try {
                     applyPermissions("777", emojiSetDestinationFile.getAbsolutePath());
+                    fixSELinuxContextIfNeeded(emojiSetDestinationFile.getAbsolutePath());
                 } catch (Exception e) {
                     subscriber.onError(e);
                 }

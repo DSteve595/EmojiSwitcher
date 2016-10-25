@@ -21,6 +21,8 @@ import android.widget.Toast;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
+import com.stericson.RootShell.RootShell;
+import com.stericson.RootTools.RootTools;
 import com.stevenschoen.emojiswitcher.billing.IabHelper;
 import com.stevenschoen.emojiswitcher.billing.IabResult;
 import com.stevenschoen.emojiswitcher.billing.Inventory;
@@ -53,6 +55,11 @@ public class SwitcherActivity extends RxAppCompatActivity implements InstallEmoj
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (BuildConfig.DEBUG) {
+            RootTools.debugMode = true;
+            RootShell.debugMode = true;
+        }
 
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         if (cm.getActiveNetworkInfo() == null || !cm.getActiveNetworkInfo().isConnected()) {
