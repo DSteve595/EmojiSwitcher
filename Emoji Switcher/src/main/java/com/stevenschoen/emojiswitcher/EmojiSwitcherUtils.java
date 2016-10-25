@@ -306,9 +306,13 @@ public class EmojiSwitcherUtils {
     }
 
     public static void applyPermissions(String permissions, String path) throws TimeoutException, RootDeniedException, IOException {
-        RootTools.remount(path, "RW");
         Shell shell = RootTools.getShell(true);
-        shell.add(new Command(0, "chmod " + permissions + " " + path));
+        if (shell.isSELinuxEnforcing()) {
+            shell.add(new Command(0, "mount -o rw,remount /system"));
+        } else {
+            RootTools.remount(path, "RW");
+        }
+        shell.add(new Command(1, "chmod " + permissions + " " + path));
         shell.close();
     }
 
